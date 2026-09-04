@@ -1,4 +1,4 @@
-# cox_swb_model.R -- SWB convergence layer (robust covariates + 180-day washout)
+# cox_swb_model.R -- self-reported wellbeing (SWB) pathway (robust covariates + 180-day lag period)
 library(survival)
 swb_dat <- readRDS("swb_dat.rds")
 
@@ -18,7 +18,7 @@ covs <- "age + sex_c + race_c + ethn_c + income_m + educ_m + log_util"
 hr <- function(m, v) sprintf("%.4f (%.4f - %.4f)",
                              exp(coef(m)[[v]]), exp(confint(m)[v,1]), exp(confint(m)[v,2]))
 
-## Test 2: SWB -> incident depression, full + 180-day washout
+## Test 2: SWB -> incident depression, full + 180-day lag period
 m_wb  <- coxph(as.formula(paste("Surv(time_days, event) ~ z_wb +", covs)), swb_dat)
 m_wb2 <- coxph(as.formula(paste("Surv(time_days, event) ~ z_wb +", covs)),
                swb_dat[swb_dat$time_days > 180, ])

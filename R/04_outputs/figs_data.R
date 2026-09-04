@@ -23,13 +23,13 @@ row <- function(panel,label,m,v,extra=NA){
 cx <- function(rhs,d,cv=COVS) coxph(as.formula(paste("Surv(time_days,event) ~",rhs,"+",cv)), d)
 out <- list()
 
-## ---- primary (collapsed spec) full + washout : reconcile with 0.882 ----
+## ---- primary (collapsed spec) full + lag period : reconcile with 0.882 ----
 cox <- collapse(readRDS("cox_dat.rds"))
 mP <- cx("z_cohesion", cox)
 cat(sprintf("RECONCILE primary (collapsed spec): HR %.4f (%.4f-%.4f)  [factor-spec headline was 0.882]\n",
     exp(coef(mP)[["z_cohesion"]]), exp(confint(mP)["z_cohesion",1]), exp(confint(mP)["z_cohesion",2])))
 out[["p1"]] <- row("primary","Cohesion (primary)", mP, "z_cohesion")
-out[["p2"]] <- row("primary","Cohesion (180-d washout)", cx("z_cohesion",cox[cox$time_days>180,]), "z_cohesion")
+out[["p2"]] <- row("primary","Cohesion (180-d lag period)", cx("z_cohesion",cox[cox$time_days>180,]), "z_cohesion")
 
 ## ---- Fig 1A: effect modification by income ----
 cox$low_income <- as.integer(cox$income_m<=4)

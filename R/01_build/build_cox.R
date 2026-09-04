@@ -1,4 +1,4 @@
-# build_cox.R -- assemble the prospective Cox analysis dataset (Paper 2, Study A)
+# build_cox.R -- assemble the prospective Cox analysis dataset (primary analysis)
 # exposure = perceived cohesion; outcome = time to incident depression; cohort = SDOH n EHR, at-risk
 library(tidyverse); library(bigrquery)
 cdr <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")

@@ -54,5 +54,5 @@ hr <- function(mm){ ci<-confint(mm); sprintf("%.3f (%.3f-%.3f) p=%.2g",
      exp(coef(mm)[["z_cohesion"]]), exp(ci["z_cohesion",1]), exp(ci["z_cohesion",2]),
      summary(mm)$coefficients["z_cohesion","Pr(>|z|)"]) }
 cat("Cohesion -> antidepressant initiation, full   :", hr(m),  "\n")
-cat("Cohesion -> antidepressant initiation, washout:", hr(m2), "\n")
+cat("Cohesion -> antidepressant initiation, lag period:", hr(m2), "\n")
 saveRDS(ad_dat, "antidep_dat.rds")
