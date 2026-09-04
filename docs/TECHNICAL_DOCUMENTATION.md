@@ -103,21 +103,6 @@ participants **antidepressant-naive at baseline**, define time to first antidepr
 initiation; reuse cohesion + covariates from `cox_dat.rds`; fit the same Cox model. Corroborates
 the diagnosis outcome against coding idiosyncrasies.
 
-### `build_hba1c.R`  ->  `hba1c_dat.rds`
-**Purpose:** exploratory biology — does cohesion register in glycemic regulation?
-**Steps:** discover the HbA1c and BMI measurement concepts; pull person-level means (plausibility
-bounds); model cohesion → HbA1c, base then +BMI then within the non-diabetic range (<6.5%).
-Reports the selection profile of lab-havers.
-
-### `build_al.R`  ->  `al_dat.rds`
-**Purpose:** exploratory biology — expand the single glycemic marker to a multi-system
-**allostatic load** index.
-**Steps:** discover the top standard concept for nine biomarkers across cardiovascular
-(systolic/diastolic BP, heart rate), metabolic (HbA1c, total cholesterol, HDL, triglycerides,
-BMI), and inflammatory (CRP) systems; pull person-level means; flag each biomarker's high-risk
-quartile (bottom quartile for HDL); sum flags into an AL score requiring ≥6 systems measured;
-model cohesion → AL, base and +BMI.
-
 ---
 
 ## 2. Models (`R/02_models/`)

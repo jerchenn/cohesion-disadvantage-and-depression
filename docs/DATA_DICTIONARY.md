@@ -66,11 +66,6 @@ subgroup/mediation models.
 - `sleep_daily_summary` (main sleep, 120 ≤ minute_in_bed ≤ 900, ≥5 nights): `minute_asleep`,
   efficiency = `minute_asleep`/`minute_in_bed`, WASO = `minute_awake`+`minute_restless`.
 
-## Biomarkers (allostatic load; `measurement`)
-
-Concepts discovered at runtime by name (top standard concept by coverage): systolic/diastolic BP,
-heart rate, HbA1c, total cholesterol, HDL, triglycerides, C-reactive protein, BMI. AL = count of
-biomarkers in the high-risk quartile (bottom quartile for HDL), ≥6 systems required.
 
 ## Geography
 
@@ -86,4 +81,3 @@ for area-deprivation effect modification.
 | `log_util` | log1p(count of EHR condition records); ascertainment proxy |
 | `z_wb` | standardized happiness+meaning wellbeing index |
 | `z_steps`, `z_eff`, `z_waso` | standardized wearable metrics (oriented healthier = higher) |
-| `al` | allostatic load score (0–9 systems dysregulated) |

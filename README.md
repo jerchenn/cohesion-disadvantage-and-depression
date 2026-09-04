@@ -69,7 +69,6 @@ Datasets are cached as `.rds` files in the working directory; models read them. 
 | 3 | `01_build/build_wb_items.R` | `wb_item_dat.rds` (item-level affect) | — |
 | 4 | `01_build/build_fitbit.R` | `fitbit_dat.rds` (wearable) | `cox_dat.rds` |
 | 5 | `01_build/build_antidep.R` | `antidep_dat.rds` (parallel outcome) | `cox_dat.rds` |
-| 6 | `01_build/build_hba1c.R`, `build_al.R` | `hba1c_dat.rds`, `al_dat.rds` (biology) | `cox_dat.rds` |
 | 7 | `02_models/*` | printed results | the relevant `.rds` |
 | 8 | `03_robustness/*` | printed results | the relevant `.rds` |
 | 9 | `04_outputs/figs_data.R` -> `figs_plot.R` | `fig_estimates.csv`, figures | `.rds` files |
