@@ -9,7 +9,7 @@ Conventions used throughout:
 - `run_sql(q)` submits a BigQuery query and downloads the result with `bigint = "character"`
   (person_id is INT64 and would overflow R's 32-bit integer to NA otherwise).
 - Survey items are pulled from `ds_survey`; diagnoses from `condition_occurrence`; drugs from
-  `drug_exposure`; labs/vitals from `measurement`; demographics from `person`; concept metadata
+  `drug_exposure`; demographics from `person`; concept metadata
   and hierarchies from `concept` and `concept_ancestor`.
 - Datasets are cached as `.rds` in the working directory so models can be re-run without re-querying.
 
@@ -39,11 +39,6 @@ answer-option distributions, so the affect items and their response scales can b
 **What it does:** lists Fitbit-related tables, their per-person coverage and date spans, the overlap
 with the cohesion cohort, and the columns available in the daily-summary tables.
 
-### `biomarker_check.R`
-**Purpose:** assess biomarker coverage and selection for the exploratory biology layer.
-**What it does:** counts coverage of candidate biomarkers (e.g., HbA1c, CRP) and profiles how
-biomarker-havers differ (age, prior depression, utilization) — establishing that lab availability
-is utilization-driven and therefore selected.
 
 ---
 
