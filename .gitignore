@@ -1,0 +1,9 @@
+# All of Us data outputs — never commit participant-derived data
+*.rds
+*.csv
+*.png
+*.pdf
+# R session cruft
+.Rhistory
+.RData
+.Rproj.user/
