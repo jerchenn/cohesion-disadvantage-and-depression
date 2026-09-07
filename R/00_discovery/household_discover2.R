@@ -19,9 +19,10 @@ A <- run_sql(sprintf(
        OR LOWER(question) LIKE '%%utilit%%' OR LOWER(question) LIKE '%%evict%%'
        OR LOWER(question) LIKE '%%mov%%')
    GROUP BY question_concept_id, question ORDER BY n DESC", cdr))
-A$n <- as.numeric(A$n); A$question <- substr(gsub("\\s+"," ", A$question), 1, 110)
-cat("========== (A) SDOH housing block ==========\n")
-print(as.data.frame(A[, c("n","question_concept_id","question")]), row.names=FALSE)
+A$n <- as.numeric(A$n); A$question <- gsub("\\s+"," ", A$question)
+cat(sprintf("========== (A) SDOH housing block: %d rows (full text) ==========\n", nrow(A)))
+for (i in seq_len(nrow(A)))
+  cat(sprintf("%-9s | n=%6d | %s\n", A$question_concept_id[i], A$n[i], A$question[i]))
 
 ## ---- (B) answer distributions for confirmed candidate items ----
 ids <- c(disab_deaf=903573, disab_blind=903574, disab_concen=903575, disab_walk=903576,
@@ -34,9 +35,9 @@ dd <- run_sql(sprintf(
    GROUP BY question_concept_id, answer ORDER BY question_concept_id, n DESC",
   cdr, paste(ids, collapse=",")))
 dd$n <- as.numeric(dd$n); dd$item <- names(ids)[match(as.numeric(dd$question_concept_id), ids)]
-cat("\n========== (B) answer options for confirmed items ==========\n")
+cat("\n========== (B) answer options for confirmed items (full) ==========\n")
 for (nm in names(ids)){
   sub <- dd[dd$item==nm, c("answer","n")]
-  if (nrow(sub)){ cat(sprintf("\n### %-12s (%d) ###\n", nm, ids[nm]))
-    print(as.data.frame(sub), row.names=FALSE) }
+  if (nrow(sub)){ cat(sprintf("\n### %s (%d) ###\n", nm, ids[nm]))
+    for (j in seq_len(nrow(sub))) cat(sprintf("  %6d  %s\n", sub$n[j], sub$answer[j])) }
 }
