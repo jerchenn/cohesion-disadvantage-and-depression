@@ -1,7 +1,8 @@
 # table1.R -- Table 1 (cohort characteristics by cohesion tertile) + eTable 1
 # (subcohort comparison: main vs SWB vs Fitbit -> the selection-transparency table).
 # JAMA format: No. (%) for categorical, mean (SD) or median (IQR) for continuous.
-cox <- readRDS("cox_dat.rds")
+cox <- readRDS("cox_dat3.rds")
+util <- cox[, c("person_id","n_cond")]
 
 race_eth <- function(d) with(d, ifelse(ethnicity=="Hispanic or Latino","Hispanic",
    ifelse(race=="White","White, non-Hispanic",
@@ -31,7 +32,7 @@ summ <- function(d){
    "  Income $35k-$75k"                 = npct(d$ic,"$35k-$75k"),
    "  Income ≥$75k"                = npct(d$ic,"≥$75k"),
    "  Income not reported"              = npct(d$ic,"Not reported"),
-   "EHR conditions, median (IQR)"       = miqr(d$n_cond),
+   "Pre-baseline EHR conditions, median (IQR)" = miqr(d$n_cond),
    "Cohesion score, mean (SD)"          = msd(d$z_cohesion))
 }
 
@@ -49,7 +50,9 @@ cat("=== TABLE 1 (by cohesion tertile) ===\n"); print(t1, row.names=FALSE)
 
 ## ---- eTable 1: subcohort comparison ----
 fb  <- readRDS("fitbit_dat.rds"); fb <- fb[!is.na(fb$steps) & !is.na(fb$event),]
+fb$n_cond <- util$n_cond[match(fb$person_id, util$person_id)]
 wb  <- readRDS("wb_item_dat.rds"); wb <- wb[!is.na(wb$event),]
+wb$n_cond <- util$n_cond[match(wb$person_id, util$person_id)]
 e1 <- data.frame(Characteristic=names(summ(cox)),
                  `Main cohort`   = summ(cox),
                  `SWB subcohort` = summ(wb),

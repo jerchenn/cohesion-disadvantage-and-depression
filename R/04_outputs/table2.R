@@ -3,13 +3,13 @@
 # the headline exactly; antidepressant parallel outcome from its cohort; raked + E-value are
 # stable single values carried from rake_ipw.R / evalue.R (commented provenance).
 library(survival)
-cox <- readRDS("cox_dat.rds")
+cox <- readRDS("cox_dat3.rds")
 f <- Surv(time_days,event) ~ z_cohesion + age + sex + race + ethnicity + income_f + educ_f + emp_f + log_util
 line <- function(m,lab) data.frame(Analysis=lab, No.=format(m$n,big.mark=" "), Events=m$nevent,
    `HR (95% CI)`=sprintf("%.2f (%.2f-%.2f)", exp(coef(m)[["z_cohesion"]]),
       exp(confint(m)["z_cohesion",1]), exp(confint(m)["z_cohesion",2])), check.names=FALSE)
 
-mP <- coxph(f, cox)                      # primary (factor spec) -> 0.882
+mP <- coxph(f, cox)                      # primary (factor spec) -> 0.883
 mW <- coxph(f, cox[cox$time_days>180,])  # 180-day lag period
 
 ad <- readRDS("antidep_dat.rds")         # antidepressant-initiation parallel outcome
