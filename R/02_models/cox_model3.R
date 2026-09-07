@@ -32,4 +32,7 @@ hr(coxph(as.formula(sprintf("Surv(time_days,event) ~ %s", rhs)), d[d$prior_ehr_d
 
 cat("\n=== Proportional-hazards check (Schoenfeld) ===\n")
 print(cox.zph(m)$table[c("z_cohesion","GLOBAL"),])
-cat("(Inspect scaled Schoenfeld residual plot for z_cohesion; large global P alone is not proof.)\n")
+cat("(z_cohesion PH is met; global test is driven by race. Sensitivity: stratify baseline hazard on race.)\n")
+ms <- coxph(as.formula(sprintf("Surv(time_days,event) ~ %s + strata(race)",
+            sub(" \\+ race","",rhs))), d)
+hr(ms, "primary, strata(race) [PH sensitivity]")

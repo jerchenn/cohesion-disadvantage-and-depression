@@ -17,6 +17,8 @@ d$dep_t <- cut(d$deprivation_index, quantile(d$deprivation_index,0:3/3), include
                labels=c("Low disadvantage","Middle disadvantage","High disadvantage"))
 
 absrisk <- function(sub, t=730){
+  vars <- c("z_cohesion","age","sex_c","race_c","ethn_c","income_m","educ_m","log_util","time_days","event")
+  sub <- sub[complete.cases(sub[,vars]), ]   # align rows with coxph's complete-case fit
   f <- coxph(Surv(time_days,event) ~ z_cohesion + age + sex_c + race_c + ethn_c +
                income_m + educ_m + log_util, sub)
   beta <- coef(f)[["z_cohesion"]]
