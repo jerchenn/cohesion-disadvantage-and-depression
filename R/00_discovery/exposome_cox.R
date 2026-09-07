@@ -167,3 +167,27 @@ cat("\n=== exposure -> log_util (does discrimination predict LESS care contact?)
 print(data.frame(beta=round(uc[exposures,1],3), p=signif(uc[exposures,4],2)))
 cat("\nRead: discrim strong on self-report but HR~1 on incidence, AND discrim not predicting lower log_util,\n",
     "AND baseline exposure with strictly-subsequent outcome -> gap is recall/common-method, not under-diagnosis.\n", sep="")
+
+## ---------- THE FORK: asymptomatic-at-baseline, RAW Cox (no baseline-severity adjustment) ----------
+## Incremental-validity via adjustment cannot distinguish "flags not-yet-symptomatic risk" from "adjustment
+## strips shared state-noise". Stratification can: among the currently-well, does the exposure still predict
+## a future diagnosis with NO conditioning on symptoms?
+thr <- quantile(d$overall, 1/3, na.rm=TRUE)
+da <- d[d$overall <= thr, ]
+cat(sprintf("\n=== FORK: asymptomatic at baseline (bottom tertile of self-report severity): n=%d events=%d ===\n",
+            nrow(da), sum(da$event)))
+cxa <- coxph(as.formula(sprintf("Surv(time_days, event) ~ %s + %s + log_util", Ex, COV)), da)
+sma <- summary(cxa)$coefficients; cia <- confint(cxa)
+ASY <- data.frame(HR=round(exp(sma[exposures,"coef"]),3),
+                  CI=sprintf("%.2f-%.2f", exp(cia[exposures,1]), exp(cia[exposures,2])),
+                  p=signif(sma[exposures,ncol(sma)],2))
+cat("  raw exposure HRs among the currently-asymptomatic (NO baseline-severity adjustment):\n"); print(ASY)
+cat("  ACE/cohesion/moves >1 here while discrim ~1 => stratification earns the risk claim; all flat => no paper.\n")
+
+## ---------- selection: how the re-anchored cohort differs from the rest of the EHR cohort ----------
+full <- readRDS("cox_dat.rds"); inc <- full$person_id %in% d$person_id
+cat("\n=== selection: re-anchored analytic cohort (incl) vs rest of cox_dat (excl) ===\n")
+for (v in c("age","income_n","event"))
+  cat(sprintf("  %-9s incl=%.2f  excl=%.2f\n", v, mean(full[[v]][inc],na.rm=TRUE), mean(full[[v]][!inc],na.rm=TRUE)))
+cat(sprintf("  %-9s incl=%.2f  excl=%.2f\n", "%female",
+            100*mean(full$sex[inc]=="Female",na.rm=TRUE), 100*mean(full$sex[!inc]=="Female",na.rm=TRUE)))
