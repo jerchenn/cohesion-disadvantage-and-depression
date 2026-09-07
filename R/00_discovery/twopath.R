@@ -144,6 +144,28 @@ cat(sprintf("  total        %s\n  direct|steps %s  (via steps ~%.0f%%)\n  direct
             hrci(at,"amenity"), hrci(ads,"amenity"), 100*ps, hrci(adm,"amenity"), 100*pmv))
 cat("  cross-check: amenity -> trust/help (should be ~0):", sprintf("%+.3f", std_beta("cohesion_th","amenity", d)), "\n")
 
+## ---------- add subjective wellbeing (SWB) as a third mediator (EHHWB subcohort) ----------
+## SWB = mean of z_happy, z_meaning, z_cutoff (already recoded in wb_item_dat; higher = better).
+## NB: SWB overlaps subclinical depression, so its b-path is inflated -- treat as an affective
+## correlate, not a clean mechanism (same caveat as Paper 1's affect mediation).
+wb  <- readRDS("wb_item_dat.rds")
+wb$swb <- rowMeans(as.matrix(wb[, c("z_happy","z_meaning","z_cutoff")]), na.rm=TRUE)
+dS  <- merge(d, wb[, c("person_id","swb")], by="person_id")
+dS  <- dS[is.finite(dS$swb), ]; dS$swb <- as.numeric(scale(dS$swb))
+cat(sprintf("\n=== Subjective wellbeing (SWB) mediator: EHHWB subcohort n %d (events %d) ===\n",
+            nrow(dS), sum(dS$event)))
+cat("A-paths (index -> SWB, std beta):\n")
+for (v in c("social","decay","amenity")) cat(sprintf("  %-8s -> SWB  %+.3f\n", v, std_beta("swb", v, dS)))
+cat("  trust/help -> SWB  ", sprintf("%+.3f", std_beta("swb","cohesion_th", dS)), "\n")
+mS <- coxph(as.formula(paste("Surv(time_days,event) ~ swb +", COV)), dS)
+cat("B-path: SWB -> incident depression HR", hrci(mS,"swb"), " (inflated by construct overlap)\n")
+## social pathway: nested attenuation through trust/help then + SWB (mutually adjusted)
+m0 <- coxph(as.formula(paste("Surv(time_days,event) ~ social +", COV)), dS)
+m1 <- coxph(as.formula(paste("Surv(time_days,event) ~ social + cohesion_th +", COV)), dS)
+m2 <- coxph(as.formula(paste("Surv(time_days,event) ~ social + cohesion_th + swb +", COV)), dS)
+cat(sprintf("Social -> depression:  total %s | +trust/help %s | +trust/help+SWB %s\n",
+            hrci(m0,"social"), hrci(m1,"social"), hrci(m2,"social")))
+
 ## ---------- robustness: 180-day lag on the two total effects ----------
 cat("\n=== 180-day lag period (total effects) ===\n")
 mtl <- coxph(as.formula(paste("Surv(time_days,event) ~ social +", COV)), d[d$time_days>180,])
