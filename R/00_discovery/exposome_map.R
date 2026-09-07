@@ -92,7 +92,7 @@ for (fn in names(fam)){
   FAM[[fn]] <- z(rowMeans(M, na.rm=TRUE))
 }
 ## count families
-cnt <- function(ids, pos_regex="Yes|Once|More than once", neg_regex="^No$|^Never$"){
+cnt <- function(ids, pos_regex="Yes|Once|More than once", neg_regex="No|Never"){   # unanchored: matches "Deaf: No" too
   m <- sapply(ids, function(id){ a<-as.character(getcol(id))
     ifelse(grepl(pos_regex,a), 1, ifelse(grepl(neg_regex,a), 0, NA)) })
   rowMeans(m, na.rm=TRUE) * ncol(m) }               # mean*k ~ count, NA-robust
