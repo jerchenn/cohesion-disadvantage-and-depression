@@ -3,7 +3,7 @@
 # and education, then re-estimate the primary Cox with the weights. Tests whether the
 # HR is an artifact of the cohort's advantaged, non-representative composition.
 library(survival)
-cox <- readRDS("cox_dat.rds")
+cox <- readRDS("cox_dat3.rds")
 
 ## --- raking variables ---------------------------------------------------------
 cox$age_band <- cut(cox$age, c(-Inf,29,44,64,Inf), labels=c("18-29","30-44","45-64","65+"))
