@@ -107,35 +107,41 @@ d <- d[cc, ]
 cat(sprintf("Cross-modal sample (complete cases, both outcomes): n=%d | incident-dep events=%d\n",
             nrow(d), sum(d$event==1)))
 
-## ---------- (I) self-report severity: lm total vs direct ----------
-lm_t <- lm(as.formula(sprintf("overall ~ %s + %s", Ex, COV)), d)
-lm_d <- lm(as.formula(sprintf("overall ~ %s + %s + %s", Ex, Me, COV)), d)
-sr_t <- coef(lm_t)[exposures]; sr_d <- coef(lm_d)[exposures]
+## ---------- (I) self-report severity (SD units); distress mediation is valid here (contemporaneous) ----------
+sr_t <- coef(lm(as.formula(sprintf("overall ~ %s + %s", Ex, COV)), d))[exposures]
+sr_d <- coef(lm(as.formula(sprintf("overall ~ %s + %s + %s", Ex, Me, COV)), d))[exposures]
+sr_pct <- ifelse(abs(sr_t) < 0.02, NA, round(100*(sr_t-sr_d)/sr_t))
 
-## ---------- (II) EHR incidence: Cox total vs direct (HR per SD) ----------
-cx_t <- coxph(as.formula(sprintf("Surv(time_days, event) ~ %s + %s", Ex, COV)), d)
-cx_d <- coxph(as.formula(sprintf("Surv(time_days, event) ~ %s + %s + %s", Ex, Me, COV)), d)
-lhr_t <- coef(cx_t)[exposures]; lhr_d <- coef(cx_d)[exposures]
+## ---------- (II) EHR incidence: one Cox, all exposures, ADJUSTING log_util (ascertainment/reverse-causation) ----------
+## No distress block here: it is contemporaneous with exposure and plausibly prodromal, so conditioning on
+## it in a prospective model is over-adjustment, not mediation.
+cx <- coxph(as.formula(sprintf("Surv(time_days, event) ~ %s + %s + log_util", Ex, COV)), d)
+sm <- summary(cx)$coefficients; ci <- confint(cx)
+HR <- exp(sm[exposures,"coef"]); lo <- exp(ci[exposures,1]); hi <- exp(ci[exposures,2]); pE <- sm[exposures,ncol(sm)]
 
-## ---------- cross-modal comparison ----------
-pct <- function(a,b) ifelse(abs(a) < 0.02, NA, round(100*(a-b)/a))
-CM <- data.frame(
-  sr_total = round(sr_t,3),  sr_pct_distress = pct(sr_t, sr_d),
-  ehr_HR   = round(exp(lhr_t),3), ehr_direct_HR = round(exp(lhr_d),3),
-  ehr_pct_distress = pct(lhr_t, lhr_d))
-cat("\n=== Cross-modal: same exposures, same distress block, same sample ===\n")
-cat("  sr_total = self-report severity beta (per SD); ehr_HR = incident-depression hazard ratio (per SD)\n")
-cat("  *_pct_distress = share absorbed by distress block (blank when effect ~0). Compare the two shares.\n")
-print(CM)
+## ---------- cross-modal comparison, as a within-modality REORDERING (ranks), not raw magnitudes ----------
+cmp <- data.frame(
+  sr_beta = round(sr_t,3), sr_rank = as.integer(rank(-sr_t)), sr_pct_distress = sr_pct,
+  ehr_HR = round(HR,3), ehr_CI = sprintf("%.2f-%.2f", lo, hi), ehr_p = signif(pE,2),
+  ehr_rank = as.integer(rank(-HR)))
+cat("\n=== Cross-modal: same exposures, same sample; self-report severity vs EHR incidence ===\n")
+cat("  sr_beta per SD (distress mediation valid here); ehr_HR per SD with 95% CI (log_util-adjusted)\n")
+cat("  Compare the RANK columns: which exposures rise/fall when the outcome is clinical, not self-report.\n")
+print(cmp)
 
-## ---------- ascertainment fork: does discrimination predict LOWER utilization? ----------
-u1 <- lm(as.formula(sprintf("log_util ~ %s + %s", Ex, COV)), d)
-u2 <- lm(as.formula(sprintf("n_cond  ~ %s + %s", Ex, COV)), d)
-U <- data.frame(log_util = round(coef(u1)[exposures],3), n_cond = round(coef(u2)[exposures],3))
-cat("\n=== Ascertainment: exposure -> healthcare utilization (joint, adj covs) ===\n")
-cat("  NEGATIVE log_util/n_cond for discrim or discrim_hc => under-utilization => EHR under-diagnosis risk\n")
-print(U)
-cat(sprintf("\n  n_cond and event share the EHR channel: cor(n_cond, event) = %.3f\n",
-            cor(d$n_cond, d$event, use="complete.obs")))
-cat("\nRead: if a discrimination effect on self-report severity does NOT appear in EHR incidence AND\n",
-    "discrimination predicts lower utilization -> the gap is differential ascertainment, not 'distress only'.\n", sep="")
+## ---------- Wald contrasts on log-HR: is the clinical ranking real? (vs discrim) ----------
+V <- vcov(cx); b <- coef(cx)
+cat("\n=== log-HR contrasts vs discrim (positive => stronger clinical signal than discrimination) ===\n")
+for (a in c("ace","trauma","disability","lowcohesion","foodinsec","discrim_hc")){
+  est <- b[a]-b["discrim"]; se <- sqrt(V[a,a]+V["discrim","discrim"]-2*V[a,"discrim"])
+  cat(sprintf("  %-11s vs discrim: dlogHR=%+.3f  z=%+.2f  p=%s\n", a, est, est/se, signif(2*pnorm(-abs(est/se)),2))) }
+
+## ---------- ascertainment: what drives EHR diagnosis, and does discrimination suppress utilization? ----------
+cat(sprintf("\nlog_util's own effect in the Cox: HR=%.3f (%.2f-%.2f) p=%s  <- how much diagnosis rides on care contact\n",
+            exp(sm["log_util","coef"]), exp(ci["log_util",1]), exp(ci["log_util",2]), signif(sm["log_util",ncol(sm)],2)))
+u <- lm(as.formula(sprintf("log_util ~ %s + %s", Ex, COV)), d)
+uc <- summary(u)$coefficients
+cat("\n=== exposure -> log_util (does discrimination predict LESS care contact?) ===\n")
+print(data.frame(beta=round(uc[exposures,1],3), p=signif(uc[exposures,4],2)))
+cat("\nRead: discrim strong on self-report but HR~1 on incidence, AND discrim not predicting lower log_util,\n",
+    "AND baseline exposure with strictly-subsequent outcome -> gap is recall/common-method, not under-diagnosis.\n", sep="")
