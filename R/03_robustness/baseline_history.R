@@ -14,7 +14,7 @@ library(tidyverse); library(survival); library(bigrquery)
 cdr  <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")
 run_sql <- function(q) bq_table_download(bq_project_query(proj, q), bigint = "character")
 
-cox <- readRDS("cox_dat.rds")
+cox <- readRDS("cox_dat3.rds")
 
 ## 1. re-derive each person's baseline date = earliest cohesion-item survey date (as in build_cox.R).
 ##    (ds_survey date column is survey_datetime; adjust here if your CDR names it differently.)

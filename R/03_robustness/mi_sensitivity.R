@@ -8,7 +8,7 @@
 # RUN AFTER: build_cox.R.
 
 library(survival)
-cox <- readRDS("cox_dat.rds")
+cox <- readRDS("cox_dat3.rds")
 
 d <- data.frame(
   time_days=cox$time_days, event=cox$event, z_cohesion=cox$z_cohesion, age=cox$age,
@@ -70,6 +70,6 @@ cat(sprintf("=== MI (m=20, PMM) primary z_cohesion HR: %.3f (%.3f-%.3f) ===\n",
     exp(Q), exp(Q - 1.96*SE), exp(Q + 1.96*SE)))
 cat(sprintf("Missing before imputation: income %.1f%%, education %.1f%%\n",
     100*mean(is.na(d$income)), 100*mean(is.na(d$education))))
-cat("Compare: missing-indicator primary HR 0.882 (0.857-0.908); parsimonious ~0.87 (0.85-0.90).\n")
+cat("Compare: missing-indicator primary HR 0.883 (0.858-0.909); parsimonious ~0.85 (0.80-0.90).\n")
 cat("Interpretation: a pooled HR close to these indicates the estimate does not depend on the\n",
     "missing-indicator handling of income and education.\n", sep="")
