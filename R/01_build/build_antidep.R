@@ -5,7 +5,7 @@
 library(tidyverse); library(bigrquery); library(survival)
 cdr <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")
 run_sql <- function(q) bq_table_download(bq_project_query(proj, q), bigint = "character")
-cox <- readRDS("cox_dat.rds")
+cox <- readRDS("cox_dat3.rds")
 
 ## antidepressant drug concept set = descendants of ATC 'N06A' (standard Drug concepts)
 ad_ids <- sprintf("SELECT a.descendant_concept_id
@@ -21,14 +21,16 @@ WITH expo AS (SELECT person_id, MIN(DATE(survey_datetime)) AS expo_date
               FROM `%s.ds_survey` WHERE question_concept_id=40192463 GROUP BY person_id),
 ad AS (SELECT person_id, MIN(drug_exposure_start_date) AS first_ad
        FROM `%s.drug_exposure` WHERE drug_concept_id IN (%s) GROUP BY person_id),
-ehr AS (SELECT person_id, MIN(condition_start_date) AS first_ehr, MAX(condition_start_date) AS last_ehr,
-               COUNT(*) AS n_cond FROM `%s.condition_occurrence` GROUP BY person_id)
-SELECT expo.person_id, expo.expo_date, ad.first_ad, ehr.last_ehr, ehr.n_cond
-FROM expo JOIN ehr USING(person_id) LEFT JOIN ad USING(person_id)
+ehr AS (SELECT person_id, MIN(condition_start_date) AS first_ehr, MAX(condition_start_date) AS last_ehr
+        FROM `%s.condition_occurrence` GROUP BY person_id),
+util AS (SELECT co.person_id, COUNT(*) AS n_cond FROM `%s.condition_occurrence` co JOIN expo USING(person_id)
+         WHERE co.condition_start_date < expo.expo_date GROUP BY co.person_id)
+SELECT expo.person_id, expo.expo_date, ad.first_ad, ehr.last_ehr, COALESCE(util.n_cond,0) AS n_cond
+FROM expo JOIN ehr USING(person_id) LEFT JOIN ad USING(person_id) LEFT JOIN util USING(person_id)
 WHERE ehr.last_ehr >= expo.expo_date
   AND ehr.first_ehr <= DATE_SUB(expo.expo_date, INTERVAL 365 DAY)
-  AND (ad.first_ad IS NULL OR ad.first_ad > expo.expo_date)     -- antidepressant-naive at baseline
-", cdr, cdr, ad_ids, cdr))
+  AND (ad.first_ad IS NULL OR ad.first_ad > expo.expo_date)
+", cdr, cdr, ad_ids, cdr, cdr))
 surv$expo_date <- as.Date(surv$expo_date); surv$first_ad <- as.Date(surv$first_ad); surv$last_ehr <- as.Date(surv$last_ehr)
 surv$event <- as.integer(!is.na(surv$first_ad))
 surv$time_days <- ifelse(surv$event==1, as.numeric(surv$first_ad - surv$expo_date),
@@ -46,10 +48,11 @@ ad_dat$ethn_c <- factor(ifelse(ad_dat$ethnicity=="Hispanic or Latino","Hispanic"
                         ifelse(ad_dat$ethnicity=="Not Hispanic or Latino","NotHispanic","Other")))
 covs <- "age + sex_c + race_c + ethn_c + income_f + educ_f + log_util"
 
-cat(sprintf("Antidepressant-initiation cohort: n=%d, events=%d, median FU=%.2f yrs\n",
-    nrow(ad_dat), sum(ad_dat$event), median(ad_dat$time_days)/365.25))
 m  <- coxph(as.formula(paste("Surv(time_days, event) ~ z_cohesion +", covs)), ad_dat)
 m2 <- coxph(as.formula(paste("Surv(time_days, event) ~ z_cohesion +", covs)), ad_dat[ad_dat$time_days>180,])
+cat(sprintf("Cohort (all rows):     n=%d, events=%d, median FU=%.2f yrs\n",
+    nrow(ad_dat), sum(ad_dat$event), median(ad_dat$time_days)/365.25))
+cat(sprintf("Model (complete-case): n=%d, events=%d\n", m$n, m$nevent))
 hr <- function(mm){ ci<-confint(mm); sprintf("%.3f (%.3f-%.3f) p=%.2g",
      exp(coef(mm)[["z_cohesion"]]), exp(ci["z_cohesion",1]), exp(ci["z_cohesion",2]),
      summary(mm)$coefficients["z_cohesion","Pr(>|z|)"]) }
