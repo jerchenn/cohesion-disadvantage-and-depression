@@ -97,7 +97,9 @@ cox$income_m <- ifelse(is.na(cox$income_n), median(cox$income_n,na.rm=TRUE), cox
 cox$sex_c <- factor(ifelse(cox$sex %in% c("Female","Male"), cox$sex, "Other"))
 d <- merge(FAM, cox[,c("person_id","event","time_days","age","sex_c","income_m","log_util","n_cond")],
            by="person_id")
-exposures <- c("discrim","discrim_hc","foodinsec","disability","ace","trauma",
+## discrim_hc dropped: healthcare discrimination is selected on the same care channel that ascertains
+## the EHR outcome, so its clinical HR is uninterpretable. Kept out of the exposure set.
+exposures <- c("discrim","foodinsec","disability","ace","trauma",
                "lowcohesion","disorder","lowwalk","moves")
 mediators <- c("loneliness","lowsupport","stress","lowwellbeing")
 COV <- "age + sex_c + income_m"
@@ -129,10 +131,27 @@ cat("  sr_beta per SD (distress mediation valid here); ehr_HR per SD with 95% CI
 cat("  Compare the RANK columns: which exposures rise/fall when the outcome is clinical, not self-report.\n")
 print(cmp)
 
+## ---------- POSITIVE CONTROL: does baseline self-reported severity predict the EHR outcome at all? ----------
+## If yes, the EHR outcome IS capturable from self-report -> a discrimination null is meaningful, not an
+## outcome-measurement failure. Second model adds baseline severity to the exposure Cox: which exposures
+## still predict incidence NET of how symptomatic the person already was at baseline.
+pc <- coxph(as.formula(sprintf("Surv(time_days, event) ~ overall + %s + log_util", COV)), d)
+pcs <- summary(pc)$coefficients; pci <- confint(pc)
+cat(sprintf("\n=== POSITIVE CONTROL: baseline self-reported severity -> incident diagnosis ===\n"))
+cat(sprintf("  overall (per SD): HR=%.3f (%.2f-%.2f) p=%s\n",
+            exp(pcs["overall","coef"]), exp(pci["overall",1]), exp(pci["overall",2]), signif(pcs["overall",ncol(pcs)],2)))
+cxn <- coxph(as.formula(sprintf("Surv(time_days, event) ~ overall + %s + %s + log_util", Ex, COV)), d)
+smn <- summary(cxn)$coefficients; cin <- confint(cxn)
+NET <- data.frame(HR=round(exp(smn[exposures,"coef"]),3),
+                  CI=sprintf("%.2f-%.2f", exp(cin[exposures,1]), exp(cin[exposures,2])),
+                  p=signif(smn[exposures,ncol(smn)],2))
+cat("  exposure HRs NET of baseline severity (does the exposure add clinical risk beyond current symptoms?):\n")
+print(NET)
+
 ## ---------- Wald contrasts on log-HR: is the clinical ranking real? (vs discrim) ----------
 V <- vcov(cx); b <- coef(cx)
 cat("\n=== log-HR contrasts vs discrim (positive => stronger clinical signal than discrimination) ===\n")
-for (a in c("ace","trauma","disability","lowcohesion","foodinsec","discrim_hc")){
+for (a in c("ace","trauma","disability","lowcohesion","foodinsec")){
   est <- b[a]-b["discrim"]; se <- sqrt(V[a,a]+V["discrim","discrim"]-2*V[a,"discrim"])
   cat(sprintf("  %-11s vs discrim: dlogHR=%+.3f  z=%+.2f  p=%s\n", a, est, est/se, signif(2*pnorm(-abs(est/se)),2))) }
 
