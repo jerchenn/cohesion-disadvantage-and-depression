@@ -14,7 +14,10 @@
 library(bigrquery); library(survival)
 cdr <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")
 run_sql <- function(q) bq_table_download(bq_project_query(proj, q), bigint="character")
-cox <- readRDS("cox_dat.rds")
+## prefer the re-anchored dataset (window = MAX(SDOH,EHHWB) date) so every exposure precedes follow-up
+RDS <- if (file.exists("cox_dat2.rds")) "cox_dat2.rds" else "cox_dat.rds"
+cat(sprintf("Using survival data: %s\n", RDS))
+cox <- readRDS(RDS)
 
 ## ---------- scales + item spec (same recodes as exposure_model.R) ----------
 S <- list(
