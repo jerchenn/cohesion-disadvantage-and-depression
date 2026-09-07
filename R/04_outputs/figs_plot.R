@@ -1,6 +1,7 @@
-# figs_plot.R -- draw Figure 1 (effect modification) and Figure 2 (multimodal concordance)
-# from fig_estimates.csv. Log HR axis, reference line at 1.0, grayscale-legible (shape not
-# color), estimates labeled. Saves 300-dpi PNG + vector PDF.
+# figs_plot.R -- draw the multimodal concordance figure (manuscript Figure 3) from
+# fig_estimates.csv, plus an effect-modification forest retained for reference only (the
+# manuscript displays the continuous gradient instead; see fig_gradient.R, eFigure 2).
+# Log HR axis, reference line at 1.0, grayscale-legible (shape not color), estimates labeled.
 library(ggplot2)
 est <- read.csv("fig_estimates.csv", check.names=FALSE)
 ## sanitize non-ASCII labels so the graphics device never has to substitute glyphs
@@ -11,7 +12,7 @@ est$label <- iconv(est$label, to = "ASCII//TRANSLIT")               # strip rema
 lab_ci <- function(h,l,u) sprintf("%.2f (%.2f-%.2f)", h,l,u)
 pfmt   <- function(p) ifelse(p<0.001, "< .001", paste0("= ", sub("^0(\\.)", "\\1", sprintf("%.3f", p))))
 
-## ---------- Figure 1: effect modification ----------
+## ---------- Effect-modification forest (reference only; eFigure 2 shows the gradient) ----------
 mod <- est[est$panel %in% c("mod_income","mod_deprivation"), ]
 base <- ifelse(mod$panel=="mod_income", "A  By individual income",
                "B  By area deprivation (ZIP3)")
@@ -32,10 +33,10 @@ f1 <- ggplot(mod, aes(hr, label)) +
   theme(panel.grid.minor=element_blank(), strip.text=element_text(hjust=0, face="bold"),
         plot.title=element_text(size=11, face="bold"), plot.title.position="plot",
         plot.margin=margin(8,12,8,10))
-ggsave("figure1_modification.png", f1, width=7.0, height=5.0, dpi=300)
-ggsave("figure1_modification.pdf", f1, width=7.0, height=5.0)
+ggsave("figure_modification_forest.png", f1, width=7.0, height=5.0, dpi=300)
+ggsave("figure_modification_forest.pdf", f1, width=7.0, height=5.0)
 
-## ---------- Figure 2: multimodal concordance ----------
+## ---------- Figure 3: multimodal concordance ----------
 con <- est[est$panel=="concordance", ]
 grp <- c("Cohesion (exposure)"="Exposure",
          "Self-report: happiness"="Self-reported affect",
@@ -61,7 +62,7 @@ f2 <- ggplot(con, aes(hr, label, shape=grp)) +
   theme(panel.grid.minor=element_blank(), legend.position="top",
         plot.title=element_text(size=11, face="bold"), plot.subtitle=element_text(size=9.5),
         plot.title.position="plot", plot.margin=margin(8,12,8,10))
-ggsave("figure2_concordance.png", f2, width=7.4, height=5.2, dpi=300)
-ggsave("figure2_concordance.pdf", f2, width=7.4, height=5.2)
+ggsave("figure3_concordance.png", f2, width=7.4, height=5.2, dpi=300)
+ggsave("figure3_concordance.pdf", f2, width=7.4, height=5.2)
 
-cat("Wrote figure1_modification.{png,pdf} and figure2_concordance.{png,pdf}\n")
+cat("Wrote figure3_concordance.{png,pdf} (Figure 3) and figure_modification_forest.{png,pdf} (reference)\n")

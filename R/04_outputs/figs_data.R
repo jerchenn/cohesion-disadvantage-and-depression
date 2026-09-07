@@ -31,14 +31,14 @@ cat(sprintf("RECONCILE primary (collapsed spec): HR %.4f (%.4f-%.4f)  [factor-sp
 out[["p1"]] <- row("primary","Cohesion (primary)", mP, "z_cohesion")
 out[["p2"]] <- row("primary","Cohesion (180-d lag period)", cx("z_cohesion",cox[cox$time_days>180,]), "z_cohesion")
 
-## ---- Fig 1A: effect modification by income ----
+## ---- Effect modification by income (reported in Results; drawn as gradient in eFigure 2) ----
 cox$low_income <- as.integer(cox$income_m<=4)
 cvNoInc <- "age + sex_c + race_c + ethn_c + educ_m + log_util"
 mi <- cx("z_cohesion*low_income", cox, cvNoInc); pI <- summary(mi)$coefficients["z_cohesion:low_income","Pr(>|z|)"]
 out[["i1"]] <- row("mod_income","Higher income (>$50k)", cx("z_cohesion",cox[cox$low_income==0,],cvNoInc),"z_cohesion", pI)
 out[["i2"]] <- row("mod_income","Low income ($50k or less)", cx("z_cohesion",cox[cox$low_income==1,],cvNoInc),"z_cohesion", pI)
 
-## ---- Fig 1B: effect modification by AREA deprivation (ZIP3) ----
+## ---- Effect modification by AREA deprivation, ZIP3 (Results; gradient in eFigure 2) ----
 geo <- run_sql(sprintf("SELECT person_id, deprivation_index FROM `%s.ds_zip_code_socioeconomic`", cdr))
 geo$deprivation_index <- as.numeric(geo$deprivation_index); geo <- geo[!duplicated(geo$person_id),]
 g <- collapse(merge(readRDS("cox_dat.rds"), geo, by="person_id"))
@@ -50,7 +50,7 @@ for (t in c("Low","Middle","High"))
   out[[paste0("d_",t)]] <- row("mod_deprivation", paste0(t," deprivation"),
       cx("z_cohesion", g[g$dep_t==t,], paste(COVS,"+ z_dep")), "z_cohesion", pD)
 
-## ---- Fig 2: multimodal concordance (each modality -> incident depression, per SD healthier) ----
+## ---- Figure 3: multimodal concordance (each modality -> incident depression, per SD healthier) ----
 wb <- collapse(readRDS("wb_item_dat.rds"))
 fb <- collapse(readRDS("fitbit_dat.rds"))
 fb$z_steps<-scale(fb$steps)[,1]; fb$z_mvpa<-scale(fb$mvpa_min)[,1]
