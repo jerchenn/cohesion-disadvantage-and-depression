@@ -123,13 +123,15 @@ cv$income_m <- ifelse(is.na(cv$income_n), median(cv$income_n,na.rm=TRUE), cv$inc
 cv$sex_c <- factor(ifelse(cv$sex %in% c("Female","Male"), cv$sex, "Other"))
 d <- merge(d, cv[,c("person_id","age","sex_c","income_m")], by="person_id")
 
+## lowsupport moved to the mediator block: a-path to loneliness ~0.46 and a sign flip when the
+## distress block enters -> it is the same construct as loneliness, not an external exposure.
 exposures <- c("discrim","discrim_hc","foodinsec","disability","ace","trauma",
-               "lowcohesion","disorder","lowwalk","lowsupport","moves")
-mediators <- c("loneliness","stress","lowwellbeing")
+               "lowcohesion","disorder","lowwalk","moves")
+mediators <- c("loneliness","lowsupport","stress","lowwellbeing")
 comps     <- c("mood","somatic","anxiety")
 COV <- "age + sex_c + income_m"
 
-cat(sprintf("Analytic n: %d\n", nrow(d)))
+cat(sprintf("Merged rows: %d (regressions run on EHHWB symptom responders; per-model n below)\n", nrow(d)))
 mir <- function(Z){ r <- cor(Z, use="pairwise.complete.obs"); mean(r[upper.tri(r)]) }
 cat(sprintf("Composite internal consistency (mean inter-item r): mood %.2f | somatic %.2f | anxiety %.2f\n",
             mir(Cm$Z), mir(Cs$Z), mir(Ca$Z)))
@@ -147,8 +149,9 @@ cat("\n=== A. exposure -> composite, UNIVARIATE (adj covariates) ===\n"); print(
 joint_block <- function(y, xs){
   m <- lm(as.formula(sprintf("%s ~ %s + %s", y, paste(xs,collapse=" + "), COV)), d)
   round(coef(m)[xs],3) }
+n_joint <- nobs(lm(as.formula(sprintf("mood ~ %s + %s", paste(exposures,collapse=" + "), COV)), d))
 B <- sapply(comps, function(y) joint_block(y, exposures))
-cat("\n=== B. exposure -> composite, JOINT (all exposures mutually adjusted) ===\n"); print(B)
+cat(sprintf("\n=== B. exposure -> composite, JOINT (all exposures mutually adjusted); n=%d ===\n", n_joint)); print(B)
 
 ## ---------- C. a-paths: exposure -> each mediator, joint ----------
 Cmat <- sapply(mediators, function(m) joint_block(m, exposures))
@@ -159,12 +162,25 @@ tot <- lm(as.formula(sprintf("overall ~ %s + %s", paste(exposures,collapse=" + "
 dir <- lm(as.formula(sprintf("overall ~ %s + %s + %s",
           paste(exposures,collapse=" + "), paste(mediators,collapse=" + "), COV)), d)
 bt <- coef(tot)[exposures]; bd <- coef(dir)[exposures]
-D <- data.frame(total=round(bt,3), direct=round(bd,3),
-                pct_via_distress=round(100*(bt-bd)/bt))
-cat("\n=== D. overall severity: total (exposures+covs) vs direct (+distress block) ===\n")
-cat("    total = joint effect holding other exposures fixed; direct = after adding loneliness+stress+lowwellbeing\n")
-cat("    pct_via_distress = share absorbed by the distress block (UPPER bound; mediators overlap outcome)\n")
+## suppress the % when the total is near zero -- the ratio is uninterpretable there
+pct <- ifelse(abs(bt) < 0.05, NA, round(100*(bt-bd)/bt))
+D <- data.frame(total=round(bt,3), direct=round(bd,3), pct_via_distress=pct)
+cat(sprintf("\n=== D. overall severity: total (exposures+covs) vs direct (+distress block); n=%d ===\n", nobs(tot)))
+cat("    total = joint effect holding other exposures fixed; direct = after adding the distress block\n")
+cat("    pct_via_distress = share absorbed by distress (UPPER bound; blank when |total|<0.05, ratio meaningless)\n")
 print(D)
-cat(sprintf("\n    distress-block b-paths (in direct model): loneliness %.3f | stress %.3f | lowwellbeing %.3f\n",
-            coef(dir)[["loneliness"]], coef(dir)[["stress"]], coef(dir)[["lowwellbeing"]]))
+cat(sprintf("\n    distress-block b-paths (direct model): loneliness %.3f | lowsupport %.3f | stress %.3f | lowwellbeing %.3f\n",
+            coef(dir)[["loneliness"]], coef(dir)[["lowsupport"]], coef(dir)[["stress"]], coef(dir)[["lowwellbeing"]]))
+
+## ---------- E. is any dimensional split real? net out general severity ----------
+## regress each composite on exposure + OVERALL severity + covs. A non-zero residual beta = the exposure
+## predicts that dimension beyond general severity. If it collapses, it was general severity all along.
+spec_net <- function(y,x){
+  o <- setdiff(comps, y)  # partial out the OTHER two dimensions, not overall (overall contains y)
+  coef(lm(as.formula(sprintf("%s ~ %s + %s + %s", y, x, paste(o,collapse=" + "), COV)), d))[[x]] }
+E <- outer(exposures, comps, Vectorize(function(x,y) round(spec_net(y,x),3)))
+dimnames(E) <- list(exposures, comps)
+cat("\n=== E. dimensional specificity: exposure -> composite, net of the OTHER two composites ===\n")
+cat("    non-zero here = signal specific to that dimension beyond shared severity; near-zero = general only\n")
+print(E)
 cat("\nOrientation: all predictors higher = more adverse; composites higher = more severe; + = risk.\n")
