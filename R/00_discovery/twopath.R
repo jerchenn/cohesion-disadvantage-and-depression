@@ -96,16 +96,21 @@ cat(sprintf("\nAnalytic N: full cohort %d (events %d) | fitbit subcohort %d (eve
 
 std_beta <- function(y, x, data, cov="age + income_m + z_dep"){
   m <- lm(as.formula(paste(y,"~",x,"+",cov)), data); summary(m)$coefficients[x,"Estimate"] }
+sb <- function(y, x, data, cov="age + income_m + z_dep"){                    # std beta + p (for a-paths)
+  co <- summary(lm(as.formula(paste(y,"~",x,"+",cov)), data))$coefficients[x, c("Estimate","Pr(>|t|)")]
+  sprintf("%+.3f (p=%.1g)", co[1], co[2]) }
 hrci <- function(m,v) sprintf("%.3f (%.3f-%.3f)", exp(coef(m)[[v]]), exp(confint(m)[v,1]), exp(confint(m)[v,2]))
 
 ## ---------- A-PATHS (exposure -> mediator), reported separately (PRIMARY evidence) ----------
-cat("\n=== A-paths: built-env index -> MEDIATORS (std beta) ===\n")
-cat(sprintf("  %-8s  ->trust/help    ->steps     ->MVPA\n",""))
-for (v in c("social","decay","amenity")){
-  b_th <- std_beta("cohesion_th", v, d)
-  b_st <- std_beta("z_steps",     v, df)
-  b_mv <- std_beta("z_mvpa",      v, df)
-  cat(sprintf("  %-8s  %+.3f          %+.3f      %+.3f\n", v, b_th, b_st, b_mv)) }
+## p-values matter here: the social->activity cells are cross-modality (self-report -> device), so a
+## "null" must be shown to be null, not just small. Benchmark = z_cohesion->activity, a self-report ->
+## device path that Paper 1 found significant (+247 steps/d); it should be detectable on this sample.
+cat("\n=== A-paths: built-env index -> MEDIATORS (std beta, p) ===\n")
+for (v in c("social","decay","amenity"))
+  cat(sprintf("  %-8s  ->trust/help %s   ->steps %s   ->MVPA %s\n",
+      v, sb("cohesion_th",v,d), sb("z_steps",v,df), sb("z_mvpa",v,df)))
+cat(sprintf("  [bench]   z_cohesion   ->steps %s   ->MVPA %s\n",
+            sb("z_steps","z_cohesion",df), sb("z_mvpa","z_cohesion",df)))
 
 ## ---------- B-PATHS (mediator -> depression) ----------
 cat("\n=== B-paths: MEDIATOR -> incident depression (HR per SD healthier) ===\n")
@@ -154,9 +159,9 @@ dS  <- merge(d, wb[, c("person_id","swb")], by="person_id")
 dS  <- dS[is.finite(dS$swb), ]; dS$swb <- as.numeric(scale(dS$swb))
 cat(sprintf("\n=== Subjective wellbeing (SWB) mediator: EHHWB subcohort n %d (events %d) ===\n",
             nrow(dS), sum(dS$event)))
-cat("A-paths (index -> SWB, std beta):\n")
-for (v in c("social","decay","amenity")) cat(sprintf("  %-8s -> SWB  %+.3f\n", v, std_beta("swb", v, dS)))
-cat("  trust/help -> SWB  ", sprintf("%+.3f", std_beta("swb","cohesion_th", dS)), "\n")
+cat("A-paths (index -> SWB, std beta, p):\n")
+for (v in c("social","decay","amenity")) cat(sprintf("  %-8s -> SWB  %s\n", v, sb("swb", v, dS)))
+cat("  trust/help -> SWB  ", sb("swb","cohesion_th", dS), "\n")
 mS <- coxph(as.formula(paste("Surv(time_days,event) ~ swb +", COV)), dS)
 cat("B-path: SWB -> incident depression HR", hrci(mS,"swb"), " (inflated by construct overlap)\n")
 ## social pathway: nested attenuation through trust/help then + SWB (mutually adjusted)
