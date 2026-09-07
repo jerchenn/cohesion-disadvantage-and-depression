@@ -86,8 +86,11 @@ W <- wide[, c("person_id","social","decay","amenity","cohesion_th")]
 d  <- collapse(merge(cox, W, by="person_id"))                    # full cohort (self-report mediator)
 d  <- merge(d, geo, by="person_id", all.x=TRUE); d$z_dep <- as.numeric(scale(d$deprivation_index))
 df <- collapse(merge(fb,  W, by="person_id"))                    # fitbit subcohort (objective mediator)
-df <- merge(df, geo, by="person_id", all.x=TRUE); df$z_dep <- as.numeric(scale(df$deprivation_index))
+df <- merge(df, geo, by="person_id", all.x=TRUE)
+df <- df[!is.na(df$steps), ]                                     # restrict to Fitbit wearers -> one consistent sample
+df$z_dep   <- as.numeric(scale(df$deprivation_index))
 df$z_steps <- as.numeric(scale(df$steps))
+df$z_mvpa  <- as.numeric(scale(df$mvpa_min))
 cat(sprintf("\nAnalytic N: full cohort %d (events %d) | fitbit subcohort %d (events %d)\n",
             nrow(d), sum(d$event), nrow(df), sum(df$event)))
 
@@ -97,18 +100,21 @@ hrci <- function(m,v) sprintf("%.3f (%.3f-%.3f)", exp(coef(m)[[v]]), exp(confint
 
 ## ---------- A-PATHS (exposure -> mediator), reported separately (PRIMARY evidence) ----------
 cat("\n=== A-paths: built-env index -> MEDIATORS (std beta) ===\n")
-cat(sprintf("  %-8s  ->trust/help(self-report)   ->steps(device, fitbit)\n",""))
+cat(sprintf("  %-8s  ->trust/help    ->steps     ->MVPA\n",""))
 for (v in c("social","decay","amenity")){
   b_th <- std_beta("cohesion_th", v, d)
   b_st <- std_beta("z_steps",     v, df)
-  cat(sprintf("  %-8s  %+.3f                       %+.3f\n", v, b_th, b_st)) }
+  b_mv <- std_beta("z_mvpa",      v, df)
+  cat(sprintf("  %-8s  %+.3f          %+.3f      %+.3f\n", v, b_th, b_st, b_mv)) }
 
 ## ---------- B-PATHS (mediator -> depression) ----------
 cat("\n=== B-paths: MEDIATOR -> incident depression (HR per SD healthier) ===\n")
 mB1 <- coxph(as.formula(paste("Surv(time_days,event) ~ cohesion_th +", COV)), d)
 cat("  trust/help (full cohort) HR", hrci(mB1,"cohesion_th"), "\n")
 mB2 <- coxph(as.formula(paste("Surv(time_days,event) ~ z_steps +", COV)), df)
-cat("  steps (fitbit subcohort) HR", hrci(mB2,"z_steps"), "\n")
+cat("  steps (wearer subcohort) HR", hrci(mB2,"z_steps"), "\n")
+mB3 <- coxph(as.formula(paste("Surv(time_days,event) ~ z_mvpa +", COV)), df)
+cat("  MVPA  (wearer subcohort) HR", hrci(mB3,"z_mvpa"), "\n")
 
 ## ---------- Index -> depression: total, joint, and pathway-specific direct effects ----------
 cat("\n=== Index -> incident depression (HR per SD better environment) ===\n")
@@ -128,12 +134,14 @@ cat(sprintf("  total  %s | direct %s | proportion via trust/help ~ %.0f%% (secon
             hrci(mt,"social"), hrci(md,"social"), 100*pm))
 
 ## ---------- AMENITY pathway: mediation through device steps (fitbit subcohort) ----------
-cat("\n=== AMENITY pathway: amenity -> depression, direct after device steps (fitbit subcohort) ===\n")
-at <- coxph(as.formula(paste("Surv(time_days,event) ~ amenity +", COV)), df)
-ad <- coxph(as.formula(paste("Surv(time_days,event) ~ amenity + z_steps +", COV)), df)
-pa <- 1 - log(exp(coef(ad)[["amenity"]])) / log(exp(coef(at)[["amenity"]]))
-cat(sprintf("  total  %s | direct %s | proportion via steps ~ %.0f%% (secondary)\n",
-            hrci(at,"amenity"), hrci(ad,"amenity"), 100*pa))
+cat("\n=== AMENITY pathway: amenity -> depression, direct after device activity (wearer subcohort, one sample) ===\n")
+at  <- coxph(as.formula(paste("Surv(time_days,event) ~ amenity +", COV)), df)
+ads <- coxph(as.formula(paste("Surv(time_days,event) ~ amenity + z_steps +", COV)), df)
+adm <- coxph(as.formula(paste("Surv(time_days,event) ~ amenity + z_mvpa +", COV)), df)
+ps  <- 1 - log(exp(coef(ads)[["amenity"]])) / log(exp(coef(at)[["amenity"]]))
+pmv <- 1 - log(exp(coef(adm)[["amenity"]])) / log(exp(coef(at)[["amenity"]]))
+cat(sprintf("  total        %s\n  direct|steps %s  (via steps ~%.0f%%)\n  direct|MVPA  %s  (via MVPA ~%.0f%%)\n",
+            hrci(at,"amenity"), hrci(ads,"amenity"), 100*ps, hrci(adm,"amenity"), 100*pmv))
 cat("  cross-check: amenity -> trust/help (should be ~0):", sprintf("%+.3f", std_beta("cohesion_th","amenity", d)), "\n")
 
 ## ---------- robustness: 180-day lag on the two total effects ----------
