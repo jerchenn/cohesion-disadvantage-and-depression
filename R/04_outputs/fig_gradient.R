@@ -34,7 +34,8 @@ pgrid <- 5:95
 ## ---- (A) area deprivation (higher = more disadvantage) ----
 geo <- run_sql(sprintf("SELECT person_id, deprivation_index FROM `%s.ds_zip_code_socioeconomic`", cdr))
 geo$deprivation_index <- as.numeric(geo$deprivation_index); geo <- geo[!duplicated(geo$person_id),]
-g <- collapse(merge(readRDS("cox_dat.rds"), geo, by="person_id"))
+cx <- readRDS("cox_dat3.rds"); cx$deprivation_index <- NULL   # geo re-supplies deprivation_index
+g <- collapse(merge(cx, geo, by="person_id"))
 g <- g[!is.na(g$z_cohesion) & !is.na(g$deprivation_index), ]; g$z_dep <- scale(g$deprivation_index)[,1]
 md <- coxph(Surv(time_days,event) ~ z_cohesion*z_dep + age + sex_c + race_c + ethn_c +
               income_m + educ_m + log_util, g)
@@ -42,7 +43,7 @@ zA <- as.numeric(quantile(g$z_dep, pgrid/100))
 A  <- cbind(hr_curve(md, zA), disadvantage=pgrid, panel="A  Area deprivation (higher deprivation at right)")
 
 ## ---- (B) household income (lower = more disadvantage; x reversed to 100 - income pct) ----
-d <- collapse(readRDS("cox_dat.rds")); d <- d[!is.na(d$z_cohesion), ]; d$z_inc <- scale(d$income_m)[,1]
+d <- collapse(readRDS("cox_dat3.rds")); d <- d[!is.na(d$z_cohesion), ]; d$z_inc <- scale(d$income_m)[,1]
 mi <- coxph(Surv(time_days,event) ~ z_cohesion*z_inc + age + sex_c + race_c + ethn_c +
               educ_m + log_util, d)                    # income is the moderator, not also a covariate
 zB <- as.numeric(quantile(d$z_inc, pgrid/100))

@@ -17,7 +17,7 @@ collapse <- function(d){
   d$educ_m   <- ifelse(is.na(d$educ_n),   median(d$educ_n,  na.rm=TRUE), d$educ_n)
   d
 }
-d <- collapse(readRDS("cox_dat.rds")); d <- d[!is.na(d$z_cohesion), ]
+d <- collapse(readRDS("cox_dat3.rds")); d <- d[!is.na(d$z_cohesion), ]
 
 ## natural spline (3 df) on cohesion; keep the basis object to rebuild it at the grid + reference
 bas <- ns(d$z_cohesion, df=3)

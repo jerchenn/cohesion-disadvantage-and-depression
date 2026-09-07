@@ -10,7 +10,7 @@
 library(tidyverse); library(survival); library(bigrquery)
 cdr <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")
 run_sql <- function(q) bq_table_download(bq_project_query(proj, q), bigint="character")
-cox <- readRDS("cox_dat.rds")
+cox <- readRDS("cox_dat3.rds"); cox$deprivation_index <- NULL   # geo re-supplies deprivation_index
 
 ids <- c(help=40192463, getalong=40192411, trust=40192499, values=40192417, watchout=40192400)
 lab <- c(help="Willing to help", getalong="Get along", trust="Can be trusted",

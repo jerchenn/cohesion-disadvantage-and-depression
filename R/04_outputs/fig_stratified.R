@@ -25,7 +25,8 @@ mode_lvl <- function(f) names(sort(table(f), decreasing=TRUE))[1]
 
 geo <- run_sql(sprintf("SELECT person_id, deprivation_index FROM `%s.ds_zip_code_socioeconomic`", cdr))
 geo$deprivation_index <- as.numeric(geo$deprivation_index); geo <- geo[!duplicated(geo$person_id),]
-g <- collapse(merge(readRDS("cox_dat.rds"), geo, by="person_id"))
+cx <- readRDS("cox_dat3.rds"); cx$deprivation_index <- NULL   # geo re-supplies deprivation_index
+g <- collapse(merge(cx, geo, by="person_id"))
 g <- g[!is.na(g$z_cohesion) & !is.na(g$deprivation_index), ]
 
 ## cohesion tertiles (keep Low vs High for a clean 2-curve contrast); area-deprivation tertiles
