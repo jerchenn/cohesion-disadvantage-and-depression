@@ -57,6 +57,8 @@ for (b in 1:B){ i <- sample.int(n, n, TRUE)
   fit <- tryCatch(coxph(f, rk[i,], weights=rk$w[i], robust=FALSE), error=function(e) NULL)
   bc[b] <- if (is.null(fit)) NA else coef(fit)[["z_cohesion"]] }
 bc <- bc[!is.na(bc)]; ci <- exp(quantile(bc, c(.025,.975)))
+saveRDS(list(hr=exp(coef(mw)[["z_cohesion"]]), lo=ci[[1]], hi=ci[[2]],
+             n=nrow(rk), events=sum(rk$event)), "rake_out.rds")
 cat("\nPrimary HR on raking-complete subset:\n")
 cat("  unweighted:", hr(mu), " (events", mu$nevent, ")\n")
 cat(sprintf("  raked     : %.3f (%.3f-%.3f)  [%d bootstrap reps]\n",

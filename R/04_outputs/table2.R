@@ -1,7 +1,8 @@
 # table2.R -- Table 2: cohesion and incident depression, primary + sensitivity analyses.
 # Recomputes primary + lag period under the PRIMARY (factor) specification so the numbers match
-# the headline exactly; antidepressant parallel outcome from its cohort; raked + E-value are
-# stable single values carried from rake_ipw.R / evalue.R (commented provenance).
+# the headline exactly; antidepressant parallel outcome from its cohort; the reweighted row is READ from
+# rake_out.rds (written by rake_ipw.R, so no inferential estimate is hard-coded); the E-value printed
+# below is a sensitivity metric from evalue.R.
 library(survival)
 cox <- readRDS("cox_dat3.rds")
 f <- Surv(time_days,event) ~ z_cohesion + age + sex + race + ethnicity + income_f + educ_f + emp_f + log_util
@@ -16,11 +17,12 @@ ad <- readRDS("antidep_dat.rds")         # antidepressant-initiation parallel ou
 fa <- Surv(time_days,event) ~ z_cohesion + age + sex_c + race_c + ethn_c + income_f + educ_f + log_util
 mA <- coxph(fa, ad)
 
+rk <- readRDS("rake_out.rds")   ## written by rake_ipw.R -- run it before table2.R
 t2 <- rbind(
   line(mP, "Primary model (fully adjusted)"),
   line(mW, "180-day lag period"),
-  data.frame(Analysis="Reweighted to US adult margins", No.="29 836", Events=2080,
-             `HR (95% CI)`="0.88 (0.83-0.95)", check.names=FALSE),          # rake_ipw.R (bootstrap CI)
+  data.frame(Analysis="Reweighted to US adult margins", No.=format(rk$n,big.mark=" "), Events=rk$events,
+             `HR (95% CI)`=sprintf("%.2f (%.2f-%.2f)", rk$hr, rk$lo, rk$hi), check.names=FALSE),
   line(mA, "Antidepressant initiation (parallel outcome)"))
 write.csv(t2, "table2.csv", row.names=FALSE)
 cat("=== TABLE 2 (primary + sensitivity analyses) ===\n"); print(t2, row.names=FALSE)

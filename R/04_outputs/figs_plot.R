@@ -56,8 +56,8 @@ f2 <- ggplot(con, aes(hr, label, shape=grp)) +
   scale_x_log10(breaks=c(0.6,0.7,0.8,0.9,1.0)) +
   coord_cartesian(xlim=c(0.55,1.08)) +
   labs(x="Hazard ratio per 1-SD healthier level (95% CI)", y=NULL,
-       title="Association of each measurement modality\nwith incident depression",
-       subtitle="All modalities protective except device-measured sleep") +
+       title="Associations of social cohesion and related behavioral\nand affective measures with incident depression",
+       subtitle="Hazard ratios per SD (healthier direction); device-measured sleep not associated") +
   theme_bw(base_size=11) +
   theme(panel.grid.minor=element_blank(), legend.position="top",
         plot.title=element_text(size=11, face="bold"), plot.subtitle=element_text(size=9.5),
