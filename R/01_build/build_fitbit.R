@@ -4,7 +4,7 @@
 library(tidyverse); library(bigrquery)
 cdr <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")
 run_sql <- function(q) bq_table_download(bq_project_query(proj, q), bigint = "character")
-cox <- readRDS("cox_dat.rds")
+cox <- readRDS("cox_dat3.rds")
 
 ## 1. activity: person-level means over wear-days (steps in plausible range) ----
 act <- run_sql(sprintf("

@@ -24,7 +24,7 @@ cx <- function(rhs,d,cv=COVS) coxph(as.formula(paste("Surv(time_days,event) ~",r
 out <- list()
 
 ## ---- primary (collapsed spec) full + lag period : reconcile with 0.882 ----
-cox <- collapse(readRDS("cox_dat.rds"))
+cox <- collapse(readRDS("cox_dat3.rds"))
 mP <- cx("z_cohesion", cox)
 cat(sprintf("RECONCILE primary (collapsed spec): HR %.4f (%.4f-%.4f)  [factor-spec headline was 0.882]\n",
     exp(coef(mP)[["z_cohesion"]]), exp(confint(mP)["z_cohesion",1]), exp(confint(mP)["z_cohesion",2])))
@@ -41,7 +41,8 @@ out[["i2"]] <- row("mod_income","Low income ($50k or less)", cx("z_cohesion",cox
 ## ---- Effect modification by AREA deprivation, ZIP3 (Results; gradient in eFigure 2) ----
 geo <- run_sql(sprintf("SELECT person_id, deprivation_index FROM `%s.ds_zip_code_socioeconomic`", cdr))
 geo$deprivation_index <- as.numeric(geo$deprivation_index); geo <- geo[!duplicated(geo$person_id),]
-g <- collapse(merge(readRDS("cox_dat.rds"), geo, by="person_id"))
+cx3 <- readRDS("cox_dat3.rds"); cx3$deprivation_index <- NULL
+g <- collapse(merge(cx3, geo, by="person_id"))
 g <- g[!is.na(g$z_cohesion) & !is.na(g$deprivation_index),]; g$z_dep <- scale(g$deprivation_index)[,1]
 md <- cx("z_cohesion*z_dep", g, paste(COVS,"+ z_dep")); pD <- summary(md)$coefficients["z_cohesion:z_dep","Pr(>|z|)"]
 g$dep_t <- cut(g$deprivation_index, quantile(g$deprivation_index,0:3/3,na.rm=TRUE),

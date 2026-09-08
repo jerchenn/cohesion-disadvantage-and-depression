@@ -22,6 +22,7 @@ demo <- run_sql(sprintf(paste("SELECT p.person_id, DATE_DIFF(CURRENT_DATE, DATE(
   "LEFT JOIN `%s.concept` e ON p.ethnicity_concept_id=e.concept_id"), cdr,cdr,cdr,cdr))
 demo$age <- as.numeric(demo$age)
 d <- merge(wide, demo, by="person_id")
+.a3 <- readRDS("cox_dat3.rds"); d$age <- .a3$age[match(d$person_id, .a3$person_id)]
 
 ## 2. score cohesion + wellbeing + SES
 map5 <- c("Strongly disagree"=1,"Disagree"=2,"Neutral (neither agree nor disagree)"=3,"Agree"=4,"Strongly agree"=5)

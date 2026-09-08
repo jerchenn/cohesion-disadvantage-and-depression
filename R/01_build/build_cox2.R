@@ -10,7 +10,7 @@
 library(bigrquery)
 cdr <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")
 run_sql <- function(q) bq_table_download(bq_project_query(proj, q), bigint="character")
-cox <- readRDS("cox_dat.rds")
+cox <- readRDS("cox_dat3.rds")
 
 ehhwb_ids <- c(1332946,1332947,1332948,1332950,1333208,1332857,1333210,1333212,1332951,1333202,1333203,
                1703988,1704021,1703976,1704055,1704035,1703994,1704056,1704011,1704029,1704020,1703989,
