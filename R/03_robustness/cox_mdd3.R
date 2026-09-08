@@ -22,7 +22,7 @@ SELECT expo.person_id, expo.expo_date, mdd.first_mdd, ehr.last_ehr
 FROM expo JOIN ehr USING(person_id) LEFT JOIN mdd USING(person_id)", cdr, cdr, mdd_ids, cdr))
 sv$expo_date <- as.Date(sv$expo_date); sv$first_mdd <- as.Date(sv$first_mdd); sv$last_ehr <- as.Date(sv$last_ehr)
 
-d <- merge(cox[, setdiff(names(cox), c("event","time_days"))], sv, by="person_id")
+d <- merge(cox[, setdiff(names(cox), c("event","time_days","expo_date"))], sv, by="person_id")
 d$event <- as.integer(!is.na(d$first_mdd) & d$first_mdd > d$expo_date)
 d$time_days <- ifelse(d$event==1, as.numeric(d$first_mdd - d$expo_date), as.numeric(d$last_ehr - d$expo_date))
 d <- d[d$time_days > 0, ]
