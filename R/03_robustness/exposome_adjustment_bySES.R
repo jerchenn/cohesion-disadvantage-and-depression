@@ -34,7 +34,8 @@ ADV <- data.frame(person_id=W$person_id, ace=cnt(ace_ids), trauma=cnt(trauma_ids
 ## ---------- assemble: re-anchored cohort + deprivation + collapsed covariates ----------
 geo <- run_sql(sprintf("SELECT person_id, deprivation_index FROM `%s.ds_zip_code_socioeconomic`", cdr))
 geo$deprivation_index <- as.numeric(geo$deprivation_index); geo <- geo[!duplicated(geo$person_id),]
-d <- merge(merge(readRDS("cox_dat2.rds"), ADV, by="person_id"), geo, by="person_id")
+cx2 <- readRDS("cox_dat2.rds"); cx2$deprivation_index <- NULL
+d <- merge(merge(cx2, ADV, by="person_id"), geo, by="person_id")
 d$sex_c  <- factor(ifelse(d$sex %in% c("Female","Male"), d$sex, "Other"))
 d$race_c <- factor(ifelse(d$race %in% c("White","Black or African American"), d$race, "Other"))
 d$ethn_c <- factor(ifelse(d$ethnicity=="Hispanic or Latino","Hispanic",

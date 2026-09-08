@@ -33,5 +33,5 @@ lt <- coef(m_tot)[["z_cohesion"]]; ld <- coef(m_dir)[["z_cohesion"]]
 cat("\n=== Cohesion -> incident depression: total vs direct (holding SWB) ===\n")
 cat("Total  HR (cohesion):       ", hr(m_tot, "z_cohesion"), "\n")
 cat("Direct HR (cohesion | SWB): ", hr(m_dir, "z_cohesion"), "\n")
-cat("Approx proportion mediated by SWB:", round((lt - ld)/lt, 3),
-    " (construct-overlap + HR non-collapsibility caveats)\n")
+cat("log-HR attenuation after adjustment for SWB:", round((lt - ld)/lt, 3),
+    " (exploratory; not a causal proportion mediated -- construct-overlap + HR non-collapsibility)\n")

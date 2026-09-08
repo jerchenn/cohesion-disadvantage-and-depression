@@ -43,7 +43,8 @@ collapse <- function(d){
                      ifelse(d$ethnicity=="Not Hispanic or Latino","NotHispanic","Other")))
   d$income_m <- ifelse(is.na(d$income_n), median(d$income_n,na.rm=TRUE), d$income_n)
   d$educ_m   <- ifelse(is.na(d$educ_n),   median(d$educ_n,  na.rm=TRUE), d$educ_n); d }
-d <- collapse(merge(merge(readRDS("cox_dat2.rds"), ADV, by="person_id"), geo, by="person_id"))
+cx2 <- readRDS("cox_dat2.rds"); cx2$deprivation_index <- NULL
+d <- collapse(merge(merge(cx2, ADV, by="person_id"), geo, by="person_id"))
 need <- c("z_cohesion","ace","trauma","disability","discrim","foodinsec","deprivation_index",
           "age","sex_c","race_c","ethn_c","income_m","educ_m","log_util","event","time_days")
 d <- d[complete.cases(d[,need]), ]
