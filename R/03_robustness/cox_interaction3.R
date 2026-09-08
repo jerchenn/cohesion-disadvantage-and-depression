@@ -8,9 +8,9 @@
 
 library(survival)
 d <- readRDS("cox_dat3.rds")
-d <- d[!is.na(d$deprivation_index), ]
+d <- d[!is.na(d$deprivation_index) & !is.na(d$zip3_as_string), ]
 z <- function(v){ v[is.na(v)] <- median(v,na.rm=TRUE); as.numeric(scale(v)) }
-d$dep_z <- z(d$deprivation_index); d$income_z <- z(d$income_n); d$clus <- factor(d$deprivation_index)
+d$dep_z <- z(d$deprivation_index); d$income_z <- z(d$income_n); d$clus <- factor(d$zip3_as_string)
 prim <- "age + sex + race + ethnicity + income_f + educ_f + emp_f + log_util"
 prim_noinc <- "age + sex + race + ethnicity + educ_f + emp_f + log_util"
 ix <- function(m, term, lab){ b<-summary(m)$coefficients[term,]

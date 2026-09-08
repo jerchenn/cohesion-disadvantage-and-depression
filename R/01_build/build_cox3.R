@@ -74,7 +74,7 @@ s5 <- s4[s4$time_days > 0, ];                              cat(sprintf("  follow
 s5$prior_ehr_days <- as.numeric(s5$expo_date - s5$first_ehr)
 
 ## 3. deprivation (ZIP3-level) for clustering + interaction
-geo <- run_sql(sprintf("SELECT person_id, deprivation_index FROM `%s.ds_zip_code_socioeconomic`", cdr))
+geo <- run_sql(sprintf("SELECT person_id, zip3_as_string, deprivation_index FROM `%s.ds_zip_code_socioeconomic`", cdr))
 geo$deprivation_index <- as.numeric(geo$deprivation_index); geo <- geo[!duplicated(geo$person_id),]
 
 cox_dat3 <- merge(d, s5[c("person_id","expo_date","event","time_days","n_cond","prior_ehr_days")], by="person_id")

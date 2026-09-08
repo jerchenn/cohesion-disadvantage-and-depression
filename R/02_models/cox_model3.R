@@ -19,7 +19,7 @@ m0 <- coxph(as.formula(sprintf("Surv(time_days,event) ~ %s", sub(" \\+ log_util"
 hr(m0, "same model, NO utilization adj")
 
 cat("\n=== ZIP3 cluster-robust variance (concern 8) ===\n")
-dc <- d[!is.na(d$deprivation_index), ]; dc$clus <- factor(dc$deprivation_index)
+dc <- d[!is.na(d$zip3_as_string), ]; dc$clus <- factor(dc$zip3_as_string)
 mr <- coxph(as.formula(sprintf("Surv(time_days,event) ~ %s + cluster(clus)", rhs)), dc)
 b <- summary(mr)$coefficients["z_cohesion",]
 cat(sprintf("%-38s HR %.3f (%.3f-%.3f)  robust SE; %d ZIP3 clusters\n", "primary, cluster-robust",
