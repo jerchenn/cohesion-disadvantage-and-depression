@@ -1,8 +1,9 @@
 # mediation.R -- formal mediation of cohesion -> incident depression through
 #  (a) objective physical activity (steps)  and  (b) self-reported affect (wellbeing).
-# Difference method on the log-HR scale (Cox), proportion mediated = 1 - beta_direct/beta_total.
-# CAVEATS reported: HR non-collapsibility (direct/total not cleanly separable in Cox) and
-# cross-sectional mediators (measured near baseline, not strictly on the exposure->outcome path).
+# Difference method on the log-HR scale (Cox), reported as EXPLORATORY ATTENUATION after adjustment,
+# NOT a causal proportion mediated. HR non-collapsibility (direct/total not cleanly separable in Cox)
+# and cross-sectional mediators (measured near baseline, not strictly on the exposure->outcome path)
+# preclude a causal decomposition.
 library(survival)
 
 pm <- function(dat, med, lab){
@@ -24,7 +25,7 @@ pm <- function(dat, med, lab){
   cat(sprintf("  a-path cohesion->%s : %+.3f SD\n", med, a))
   cat(sprintf("  total  HR(cohesion)        : %.3f\n", exp(bt)))
   cat(sprintf("  direct HR(cohesion|%s): %.3f\n", med, exp(bd)))
-  cat(sprintf("  proportion mediated (logHR): %.1f%%\n", 100*(bt-bd)/bt))
+  cat(sprintf("  log-HR attenuation after adjustment: %.1f%% (exploratory; not a causal proportion mediated)\n", 100*(bt-bd)/bt))
 }
 
 fb  <- readRDS("fitbit_dat.rds")

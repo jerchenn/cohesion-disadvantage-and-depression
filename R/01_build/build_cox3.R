@@ -16,19 +16,20 @@ run_sql <- function(q) bq_table_download(bq_project_query(proj, q), bigint = "ch
 
 ## 1. cohesion items + SES + demographics (whole SDOH cohort) -- identical to build_cox.R
 item_ids <- c(40192463,40192411,40192499,40192417,40192400, 1585375,1585940,1585952)
-sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer FROM `%s.ds_survey` WHERE question_concept_id IN (%s)",
+sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer, survey_datetime FROM `%s.ds_survey` WHERE question_concept_id IN (%s)",
                       cdr, paste(item_ids, collapse=",")))
+sv <- sv[order(sv$person_id, sv$question_concept_id, sv$survey_datetime), ]
 sv <- sv[!duplicated(sv[c("person_id","question_concept_id")]), ]
 labs <- c("40192463"="help","40192411"="getalong","40192499"="trust","40192417"="values",
           "40192400"="watchout","1585375"="income","1585940"="education","1585952"="employment")
 sv$item <- labs[sv$question_concept_id]
 wide <- tidyr::pivot_wider(sv[!is.na(sv$item), c("person_id","item","answer")], names_from=item, values_from=answer)
-demo <- run_sql(sprintf(paste("SELECT p.person_id, DATE_DIFF(CURRENT_DATE, DATE(p.birth_datetime), YEAR) AS age,",
+demo <- run_sql(sprintf(paste("SELECT p.person_id, DATE(p.birth_datetime) AS birth_date,",
   "g.concept_name AS sex, r.concept_name AS race, e.concept_name AS ethnicity FROM `%s.person` p",
   "LEFT JOIN `%s.concept` g ON p.gender_concept_id=g.concept_id",
   "LEFT JOIN `%s.concept` r ON p.race_concept_id=r.concept_id",
   "LEFT JOIN `%s.concept` e ON p.ethnicity_concept_id=e.concept_id"), cdr,cdr,cdr,cdr))
-demo$age <- as.numeric(demo$age)
+demo$birth_date <- as.Date(demo$birth_date)
 d <- merge(wide, demo, by="person_id")
 map5 <- c("Strongly disagree"=1,"Disagree"=2,"Neutral (neither agree nor disagree)"=3,"Agree"=4,"Strongly agree"=5)
 map4 <- c("Strongly disagree"=1,"Disagree"=2,"Agree"=3,"Strongly agree"=4)
@@ -76,8 +77,9 @@ s5$prior_ehr_days <- as.numeric(s5$expo_date - s5$first_ehr)
 geo <- run_sql(sprintf("SELECT person_id, deprivation_index FROM `%s.ds_zip_code_socioeconomic`", cdr))
 geo$deprivation_index <- as.numeric(geo$deprivation_index); geo <- geo[!duplicated(geo$person_id),]
 
-cox_dat3 <- merge(d, s5[c("person_id","event","time_days","n_cond","prior_ehr_days")], by="person_id")
+cox_dat3 <- merge(d, s5[c("person_id","expo_date","event","time_days","n_cond","prior_ehr_days")], by="person_id")
 cox_dat3 <- merge(cox_dat3, geo, by="person_id", all.x=TRUE)
+cox_dat3$age <- as.numeric(difftime(cox_dat3$expo_date, cox_dat3$birth_date, units="days"))/365.25
 cox_dat3$log_util <- log1p(cox_dat3$n_cond)   # PRE-baseline utilization
 saveRDS(cox_dat3, "cox_dat3.rds")
 cat(sprintf("\ncox_dat3 saved: n=%d, events=%d, median FU(yr)=%.2f\n",

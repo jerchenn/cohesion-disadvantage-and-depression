@@ -1,7 +1,10 @@
 # cox_mdd3.R -- referee additional-comment 1: restrict the outcome to major depressive disorder.
 # Keeps the corrected primary cohort (cox_dat3.rds, free of ANY depression before baseline, so also free
 # of MDD) and redefines the event as incident MDD (descendants of 'Major depressive disorder' and
-# 'Recurrent depressive disorder' only); non-MDD depression cases are censored at last EHR record. Reuses
+# 'Recurrent depressive disorder' only). Non-MDD depressive diagnoses during follow-up are NOT treated as
+# a competing event; participants are followed to the first MDD code or last EHR record. (A non-MDD
+# depression could precede MDD; this is a simplification, acceptable because the cohort is depression-free
+# at baseline and the aim is only a phenotype-robustness check.) Reuses
 # cox_dat3 covariates (phenotype-independent). Compares with the broad-phenotype primary (HR 0.883).
 # Aggregate only. Needs: survival, bigrquery.
 
