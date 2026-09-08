@@ -22,7 +22,10 @@ cat("=== Interaction, primary adjustment set, ZIP3 cluster-robust ===\n")
 ma <- coxph(as.formula(sprintf("Surv(time_days,event) ~ z_cohesion*dep_z + %s + cluster(clus)", prim)), d)
 ix(ma, "z_cohesion:dep_z", "cohesion x area-deprivation (alone)")
 mi <- coxph(as.formula(sprintf("Surv(time_days,event) ~ z_cohesion*income_z + %s + cluster(clus)", prim_noinc)), d)
-ix(mi, "z_cohesion:income_z", "cohesion x income (alone)")
+ix(mi, "z_cohesion:income_z", "cohesion x income, linear (alone)")
+d$inc_hi <- as.integer(!is.na(d$income_n) & d$income_n >= 6)   # >= $75k, avoids equal-spacing assumption
+mc <- coxph(as.formula(sprintf("Surv(time_days,event) ~ z_cohesion*inc_hi + %s + cluster(clus)", prim_noinc)), d)
+ix(mc, "z_cohesion:inc_hi", "cohesion x higher-income (categorical >=$75k)")
 
 cat("\n=== Both axes in one model (do they survive mutual adjustment?) ===\n")
 mb <- coxph(as.formula(sprintf("Surv(time_days,event) ~ z_cohesion*dep_z + z_cohesion*income_z + %s + cluster(clus)", prim_noinc)), d)
