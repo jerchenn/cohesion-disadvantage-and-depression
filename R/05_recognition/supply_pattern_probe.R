@@ -33,13 +33,14 @@ print(as.data.frame(d |> filter(distress_bin == 1) |> group_by(sup_t) |> summari
   log_util_med = round(median(log_util, na.rm = TRUE), 2))))
 
 ## CHECK B -- ASCERTAINMENT: is EHR capture just denser/more concentrated in low-supply(rural) areas?
-## Total pre-baseline condition-record count per person by tertile (proxy for EHR completeness/capture).
-ehr <- q("SELECT person_id, COUNT(*) n_cond FROM `__CDR__.condition_occurrence` GROUP BY person_id")
-ehr$n_cond <- as.numeric(ehr$n_cond)
-de <- left_join(d, ehr, by = "person_id")
+## Total condition-record count per person by tertile (proxy for EHR completeness/capture).
+ehr <- q("SELECT person_id, COUNT(*) ehr_cond FROM `__CDR__.condition_occurrence` GROUP BY person_id")
+ehr$ehr_cond <- as.numeric(ehr$ehr_cond)
+de <- d |> select(person_id, sup_t) |> left_join(ehr, by = "person_id")   # keep only needed cols -> no name clash
+de$ehr_cond[is.na(de$ehr_cond)] <- 0
 cat("\n== EHR record density (total condition rows) by supply tertile ==\n")
 print(as.data.frame(de |> group_by(sup_t) |> summarise(
-  n = n(), cond_med = round(median(n_cond, na.rm = TRUE), 0), cond_mean = round(mean(n_cond, na.rm = TRUE), 0))))
+  n = n(), cond_med = round(median(ehr_cond), 0), cond_mean = round(mean(ehr_cond), 0))))
 
 ## site concentration: distinct EHR sites per tertile (fewer sites = more concentrated capture)
 site <- tryCatch(
