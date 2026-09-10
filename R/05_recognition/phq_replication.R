@@ -22,14 +22,18 @@ cx$sup_t <- relevel(factor(cut(cx$mh_prov_per_100k, quantile(cx$mh_prov_per_100k
 freq <- function(ans) case_when(grepl('not at all', ans) ~ 0L, grepl('several days', ans) ~ 1L,
                                 grepl('more than half', ans) ~ 2L, grepl('nearly every day', ans) ~ 3L,
                                 TRUE ~ NA_integer_)
+# ONE row per person per item (surveys can be answered multiple times -> dedupe, take max/worst severity)
 p1 <- q("SELECT person_id, LOWER(answer) ans FROM `__CDR__.ds_survey` WHERE question LIKE '%little interest or pleasure%'") |>
-  transmute(person_id, phq_interest = freq(ans))
+  transmute(person_id, v = freq(ans)) |> filter(!is.na(v)) |> group_by(person_id) |>
+  summarise(phq_interest = max(v), .groups="drop")
 p2 <- q("SELECT person_id, LOWER(answer) ans FROM `__CDR__.ds_survey` WHERE question LIKE '%feeling down, depressed%'") |>
-  transmute(person_id, phq_down = freq(ans))
-cat("== PHQ item answer mapping check (interest) ==\n"); print(table(p1$phq_interest, useNA="ifany"))
+  transmute(person_id, v = freq(ans)) |> filter(!is.na(v)) |> group_by(person_id) |>
+  summarise(phq_down = max(v), .groups="drop")
+cat("== PHQ item dedup check: rows==uniquePersons?", nrow(p1)==n_distinct(p1$person_id), "n=", nrow(p1), "==\n")
 
-phq <- full_join(p1, p2, by = "person_id") |>
+phq <- inner_join(p1, p2, by = "person_id") |>                                   # both items present
   mutate(phq2 = phq_interest + phq_down, distress = as.integer(phq2 >= 3))       # standard PHQ-2 screen +
+stopifnot(nrow(phq) == n_distinct(phq$person_id))                               # guard: one row per person
 
 d <- cx |> left_join(phq, by="person_id") |>
   filter(!is.na(sup_t), !is.na(distress), !is.na(time_days), time_days > 0, !is.na(event))
@@ -51,7 +55,8 @@ cat("-- + prior_ehr_days --\n");   hr(coxph(Surv(time_days,event)~sup_t+prior_yr
 
 ## (2) modality mechanism among PHQ-distressed
 vis <- q("SELECT person_id, LOWER(answer) ans FROM `__CDR__.ds_survey` WHERE question LIKE '%Mental Health Professional Visits%'") |>
-  transmute(person_id, mh_hi = case_when(grepl('16 or more|10 to 12|8 to 9|6 to 7',ans)~1L, grepl('visits:',ans)~0L, TRUE~NA_integer_))
+  transmute(person_id, v = case_when(grepl('16 or more|10 to 12|8 to 9|6 to 7',ans)~1L, grepl('visits:',ans)~0L, TRUE~NA_integer_)) |>
+  filter(!is.na(v)) |> group_by(person_id) |> summarise(mh_hi = max(v), .groups="drop")   # one row/person
 dm <- dd |> left_join(vis, by="person_id") |> filter(!is.na(mh_hi))
 cat("\n== (2) modality: among frequent-MH-contact PHQ-distressed, EHR-code% by supply ==\n")
 print(as.data.frame(dm |> filter(mh_hi==1) |> group_by(sup_t) |> summarise(n=n(), got_code_pct=round(100*mean(event),1))))
