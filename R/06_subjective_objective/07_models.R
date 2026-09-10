@@ -11,10 +11,22 @@
 d <- readRDS("srh_analytic.rds")
 d$race <- relevel(factor(ifelse(is.na(d$race),"Other",d$race)), ref="White")
 
-## common complete-case sample (BMI+BP+glucose; HbA1c DROPPED -- selectively measured, shrinks+biases)
-cc <- complete.cases(d[,c("sr_phys","income","educ","race","age","female","bmi","sbp","glucose")])
+## diagnose: non-NA counts incl. derived vars (age/female were NOT in the 06 coverage print)
+cat("== non-NA counts ==\n")
+print(sapply(d[,c("sr_phys","income","educ","race","age","female","bmi","sbp","glucose","gender_concept_id","year_of_birth")],
+             function(x) sum(!is.na(x))))
+cat("\ngender_concept_id values:\n"); print(head(sort(table(d$gender_concept_id, useNA="ifany"), decreasing=TRUE), 6))
+
+## rebuild age/female robustly from raw cols in the RDS
+d$age    <- 2024 - as.numeric(d$year_of_birth)
+d$female <- ifelse(d$gender_concept_id %in% c("8532"), 1L,
+             ifelse(d$gender_concept_id %in% c("8507"), 0L, NA_integer_))
+covars <- c("sr_phys","income","educ","race","age","bmi","sbp","glucose")   # female added below if usable
+if (sum(!is.na(d$female)) > 0.5*nrow(d)) covars <- c(covars, "female") else cat("\n(female unusable -> dropped from model)\n")
+
+cc <- complete.cases(d[,covars])
 b <- d[cc,]
-cat("common complete-case n =", nrow(b), "\n\n")
+cat("\ncommon complete-case n =", nrow(b), " | covars:", paste(covars,collapse=", "), "\n\n")
 
 ses <- function(m, lab){
   s <- summary(m)$coefficients
@@ -23,10 +35,12 @@ ses <- function(m, lab){
   for (r in rows) cat(sprintf("   %-14s b=%+.3f (SE %.3f)\n", r, s[r,1], s[r,2]))
 }
 
-m0 <- lm(sr_phys ~ income + educ + race + age + female, b)
-m1 <- lm(sr_phys ~ income + educ + race + age + female + poly(bmi,2), b)
-m2 <- lm(sr_phys ~ income + educ + race + age + female + poly(bmi,2) + poly(sbp,2), b)
-m3 <- lm(sr_phys ~ income + educ + race + age + female + poly(bmi,2) + poly(sbp,2) + poly(glucose,2), b)
+sexterm <- if ("female" %in% covars) "+ female" else ""
+f <- function(extra) as.formula(paste("sr_phys ~ income + educ + race + age", sexterm, extra))
+m0 <- lm(f(""), b)
+m1 <- lm(f("+ poly(bmi,2)"), b)
+m2 <- lm(f("+ poly(bmi,2) + poly(sbp,2)"), b)
+m3 <- lm(f("+ poly(bmi,2) + poly(sbp,2) + poly(glucose,2)"), b)
 
 cat("== SES gradient in self-rated physical health, across nested objective-health adjustment ==\n")
 cat("   (income 1-3, educ 1-4 as linear per-level; race vs White; SAME n =", nrow(b), "throughout)\n\n")
