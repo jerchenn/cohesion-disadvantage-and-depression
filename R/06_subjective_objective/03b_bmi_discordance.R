@@ -21,14 +21,19 @@ sr AS (SELECT person_id, AVG(CASE
 bmi AS (SELECT person_id, AVG(value_as_number) bmi FROM `__CDR__.measurement`
         WHERE measurement_concept_id=3038553 AND value_as_number BETWEEN 12 AND 80 GROUP BY person_id),
 __MODCTE__
-SELECT CASE WHEN bmi<25 THEN '1_<25' WHEN bmi<30 THEN '2_25-30' WHEN bmi<35 THEN '3_30-35' ELSE '4_35+' END bmi_cat,
-       m.grp AS __NAME__, COUNT(*) n, ROUND(AVG(sr.sr_phys),3) sr_phys_mean
-FROM sr JOIN bmi USING(person_id) JOIN m USING(person_id)
-WHERE sr.sr_phys IS NOT NULL AND m.grp IS NOT NULL
-GROUP BY bmi_cat, __NAME__ HAVING COUNT(*)>=20 ORDER BY __NAME__, bmi_cat"
+SELECT CASE WHEN b.bmi<25 THEN '1_<25' WHEN b.bmi<30 THEN '2_25-30' WHEN b.bmi<35 THEN '3_30-35' ELSE '4_35+' END bmi_cat,
+       m.grp AS grp, COUNT(*) n, ROUND(AVG(s.sr_phys),3) sr_phys_mean
+FROM sr s
+JOIN bmi b ON b.person_id = s.person_id
+JOIN m    ON m.person_id = s.person_id
+WHERE s.sr_phys IS NOT NULL AND m.grp IS NOT NULL
+GROUP BY bmi_cat, m.grp HAVING COUNT(*)>=20 ORDER BY m.grp, bmi_cat"
 
-runmod <- function(modcte, name)
-  q(gsub("__NAME__", name, gsub("__MODCTE__", modcte, tmpl, fixed=TRUE), fixed=TRUE))
+runmod <- function(modcte, name) {
+  sql <- gsub("__MODCTE__", modcte, tmpl, fixed=TRUE)
+  out <- tryCatch(q(sql), error=function(e){ cat("SQL ERROR:\n", conditionMessage(e), "\n"); NULL })
+  if (!is.null(out)) { out$moderator <- name; as.data.frame(out) } else invisible(NULL)
+}
 
 race_cte <- "race_m AS (SELECT p.person_id, CASE
     WHEN c.concept_name='White' THEN 'White' WHEN c.concept_name LIKE 'Black%' THEN 'Black'
@@ -51,11 +56,11 @@ edu_cte <- "edu_m AS (SELECT person_id, ANY_VALUE(CASE
 fix <- function(cte, alias) sub(paste0(alias,"_m AS"), "m AS", cte, fixed=TRUE)
 
 cat("== B: mean self-rated PHYSICAL health at fixed BMI, by RACE ==\n")
-print(as.data.frame(runmod(fix(race_cte,"race"), "race")))
+print(runmod(fix(race_cte,"race"), "race"))
 cat("\n== ... by INCOME ==\n")
-print(as.data.frame(runmod(fix(inc_cte,"inc"), "income")))
+print(runmod(fix(inc_cte,"inc"), "income"))
 cat("\n== ... by EDUCATION ==\n")
-print(as.data.frame(runmod(fix(edu_cte,"edu"), "educ")))
+print(runmod(fix(edu_cte,"edu"), "educ"))
 
 cat("\nREAD: within a BMI band, if sr_phys_mean differs across groups -> socially-patterned reporting\n",
     "(same objective body mass, different self-rated health). That is the B thesis.\n")
