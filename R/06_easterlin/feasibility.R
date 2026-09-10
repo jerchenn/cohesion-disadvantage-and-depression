@@ -19,11 +19,13 @@ cat("base cohort n:", nrow(cx), " | has:", paste(intersect(c("income_n","depriva
 ## --- SWB: 'In general, how happy are you?' (dedupe one row/person; map to numeric, higher = happier) ---
 h <- q("SELECT person_id, LOWER(answer) ans FROM `__CDR__.ds_survey` WHERE question LIKE '%how happy are you%'")
 cat("\n== happiness answer distribution (to lock the mapping) ==\n"); print(sort(table(h$ans), decreasing=TRUE))
-h <- h |> mutate(happy = case_when(
-    grepl('very happy|extremely happy', ans) ~ 3L,
-    grepl('pretty happy|quite happy|fairly happy', ans) ~ 2L,
-    grepl('not too happy|not very happy', ans) ~ 1L,
-    grepl('not at all happy', ans) ~ 0L, TRUE ~ NA_integer_)) |>
+h <- h |> mutate(happy = case_when(          # 6-point bipolar scale, higher = happier
+    grepl('extremely happy', ans)   ~ 5L,
+    grepl('very happy', ans)        ~ 4L,
+    grepl('moderately happy', ans)  ~ 3L,
+    grepl('moderately unhappy', ans)~ 2L,
+    grepl('very unhappy', ans)      ~ 1L,
+    grepl('extremely unhappy', ans) ~ 0L, TRUE ~ NA_integer_)) |>   # don't know/skip/prefer not -> NA
   filter(!is.na(happy)) |> group_by(person_id) |> summarise(happy = mean(happy), .groups="drop")   # one row/person
 cat("mapping check -- dedup rows==persons:", nrow(h)==n_distinct(h$person_id), " n=", nrow(h), "\n")
 
