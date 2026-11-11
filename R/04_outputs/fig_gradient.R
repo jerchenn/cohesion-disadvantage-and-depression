@@ -4,8 +4,8 @@
 # "increasing disadvantage" runs left -> right; the protective HR rising toward 1.0 on the right is
 # the resource-dependence finding. Aggregate curve coordinates only.
 #
-# INPUT: cox_dat.rds + ds_zip_code_socioeconomic   OUTPUT: fig_gradient_data.csv, figure_gradient.{png,pdf}
-# RUN AFTER build_cox.R.   Needs: survival, bigrquery, ggplot2.
+# INPUT: cox_dat3.rds + ds_zip_code_socioeconomic  OUTPUT: fig_gradient_data.csv, figure_gradient.{png,pdf}
+# RUN AFTER build_cox3.R.  Needs: survival, bigrquery, ggplot2.
 
 library(survival); library(bigrquery); library(ggplot2)
 cdr <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")

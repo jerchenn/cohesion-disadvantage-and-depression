@@ -1,11 +1,11 @@
 # build_cox2.R -- re-anchored survival dataset fixing the EHHWB timing problem.
-# build_cox.R anchored the window at the SDOH cohesion date (expo_date); but ace/trauma/symptoms are EHHWB,
+# build_cox3.R anchors the window at the SDOH cohesion date (expo_date); but ace/trauma/symptoms are EHHWB,
 # completed a median 263 days later (47% of incident ACE reports postdate the diagnosis). Re-anchor at
 # anchor = MAX(SDOH date, EHHWB date) so EVERY exposure precedes follow-up, and recompute event/time from
-# anchor with prevalent-at-anchor excluded. Reuses all covariates from cox_dat.rds; only the survival
+# anchor with prevalent-at-anchor excluded. Reuses all covariates from cox_dat3.rds; only the survival
 # columns change. Saves cox_dat2.rds with the same schema so exposome_cox.R can read it directly.
 #
-# INPUT: cox_dat.rds + ds_survey + condition_occurrence + concept.  Needs: bigrquery.
+# INPUT: cox_dat3.rds + ds_survey + condition_occurrence + concept.  Needs: bigrquery.
 
 library(bigrquery)
 cdr <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")

@@ -5,8 +5,8 @@
 # fitted within each stratum, predicted at that stratum's mean/reference profile). Aggregate curve
 # coordinates only; truncated where any cell's risk set falls below 20 (All of Us cell-size policy).
 #
-# INPUT: cox_dat.rds + ds_zip_code_socioeconomic   OUTPUT: fig_stratified_data.csv, figure_stratified.{png,pdf}
-# RUN AFTER build_cox.R.   Needs: survival, bigrquery, ggplot2.
+# INPUT: cox_dat3.rds + ds_zip_code_socioeconomic  OUTPUT: fig_stratified_data.csv, figure_stratified.{png,pdf}
+# RUN AFTER build_cox3.R.  Needs: survival, bigrquery, ggplot2.
 
 library(survival); library(bigrquery); library(ggplot2)
 cdr <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")

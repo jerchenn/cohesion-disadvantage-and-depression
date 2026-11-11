@@ -1,6 +1,6 @@
-# cox_interaction3.R -- referee concern 6 (+ PH diagnostics). On the corrected cohort (cox_dat3.rds):
+# cox_interaction3.R -- effect modification by socioeconomic disadvantage (+ PH diagnostics), on cox_dat3.rds:
 #  - cohesion x area-deprivation and cohesion x income interactions, each with the PRIMARY adjustment set
-#    (not the parsimonious spec the reviewer flagged), ZIP3 cluster-robust
+#    (not a parsimonious spec), ZIP3 cluster-robust
 #  - both interactions in ONE model to test whether each survives adjustment for the other (are the two
 #    disadvantage axes independent modifiers?)
 #  - full Schoenfeld PH table to identify which covariate drives the global test

@@ -1,9 +1,9 @@
-# paper1_robustness.R -- Paper 1 (JAMA Psychiatry) supplement: is the cohesion -> incident-depression
+# exposome_adjustment.R -- supplement robustness: is the cohesion -> incident-depression
 # effect confounded by the individual/structural adversity exposome? Adds childhood adversity, everyday
 # discrimination, food insecurity, disability, and lifetime trauma to the EXACT primary Cox spec and
 # checks whether the cohesion HR moves. Run on the re-anchored cohort (cox_dat2.rds) so every adversity
 # measure precedes follow-up (ace/trauma are EHHWB, later than the SDOH exposure date -- see build_cox2.R).
-# Reports the published number, the same spec in this subsample (base), each adversity added singly, and
+# Reports the main-text estimate, the same spec in this subsample (base), each adversity added singly, and
 # all five together. Cohesion stable base->full = not confounded by the adversity exposome. Aggregate only.
 #
 # INPUT: cox_dat.rds + cox_dat2.rds + ds_survey.  Needs: bigrquery, survival.
@@ -41,7 +41,7 @@ ADV <- data.frame(person_id=W$person_id,
                   ace=cnt(ace_ids), trauma=cnt(trauma_ids), disability=cnt(disab_ids),
                   discrim=idx_scale(disc_ids,"disc6"), foodinsec=idx_scale(food_ids,"food3"))
 
-## ---------- Paper 1 primary spec ----------
+## ---------- primary spec ----------
 base_rhs <- "z_cohesion + age + sex + race + ethnicity + income_f + educ_f + emp_f + log_util"
 fit <- function(rhs, data) coxph(as.formula(sprintf("Surv(time_days, event) ~ %s", rhs)), data=data)
 row <- function(m, lab){ b<-summary(m)$coefficients["z_cohesion",]; ci<-exp(confint(m)["z_cohesion",])
@@ -49,9 +49,9 @@ row <- function(m, lab){ b<-summary(m)$coefficients["z_cohesion",]; ci<-exp(conf
              CI=sprintf("%.3f-%.3f", ci[1], ci[2]), p=signif(b[[ncol(summary(m)$coefficients)]],2),
              n=m$n, events=m$nevent) }
 
-## published number (full cohort, original anchor) for reference
+## main-text estimate (full cohort, original anchor) for reference
 cox1 <- readRDS("cox_dat.rds")
-R <- row(fit(base_rhs, cox1), "Paper 1 primary (published, full cohort)")
+R <- row(fit(base_rhs, cox1), "primary (main text, full cohort)")
 
 ## re-anchored subsample: base spec, then adversities added
 cox2 <- merge(readRDS("cox_dat2.rds"), ADV, by="person_id")

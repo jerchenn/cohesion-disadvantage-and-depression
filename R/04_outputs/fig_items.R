@@ -4,7 +4,7 @@
 # deprivation and with lower income (HR > 1 = protection fades under disadvantage).
 # Aggregate curve/point coordinates only.
 #
-# INPUT: cox_dat.rds + ds_survey + ds_zip_code_socioeconomic.  RUN AFTER build_cox.R.
+# INPUT: cox_dat3.rds + ds_survey + ds_zip_code_socioeconomic.  RUN AFTER build_cox3.R.
 # Needs: tidyverse, survival, bigrquery, ggplot2.
 
 library(tidyverse); library(survival); library(bigrquery)

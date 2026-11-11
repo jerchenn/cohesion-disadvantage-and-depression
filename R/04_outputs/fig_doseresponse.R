@@ -3,8 +3,8 @@
 # a 95% CI band. Shows the graded protective effect (and lets readers see any nonlinearity).
 # Aggregate curve coordinates only.
 #
-# INPUT: cox_dat.rds       OUTPUT: fig_doseresponse_data.csv, figure_doseresponse.{png,pdf}
-# RUN AFTER build_cox.R.   Needs: survival, splines, ggplot2.
+# INPUT: cox_dat3.rds      OUTPUT: fig_doseresponse_data.csv, figure_doseresponse.{png,pdf}
+# RUN AFTER build_cox3.R.  Needs: survival, splines, ggplot2.
 
 library(survival); library(splines); library(ggplot2)
 

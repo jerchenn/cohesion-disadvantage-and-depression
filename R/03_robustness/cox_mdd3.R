@@ -1,4 +1,4 @@
-# cox_mdd3.R -- referee additional-comment 1: restrict the outcome to major depressive disorder.
+# cox_mdd3.R -- outcome sensitivity: restrict the outcome to major depressive disorder.
 # Keeps the corrected primary cohort (cox_dat3.rds, free of ANY depression before baseline, so also free
 # of MDD) and redefines the event as incident MDD (descendants of 'Major depressive disorder' and
 # 'Recurrent depressive disorder' only). Non-MDD depressive diagnoses during follow-up are NOT treated as

@@ -4,8 +4,8 @@
 # m=20 imputations, Nelson-Aalen cumulative hazard + event as predictors (White & Royston,
 # Stat Med 2009), pooled by Rubin's rules. Needs only 'survival'.
 #
-# INPUT : cox_dat.rds (from build_cox.R)     OUTPUT: printed pooled HR
-# RUN AFTER: build_cox.R.
+# INPUT : cox_dat3.rds (from build_cox3.R)   OUTPUT: printed pooled HR
+# RUN AFTER: build_cox3.R.
 
 library(survival)
 cox <- readRDS("cox_dat3.rds")

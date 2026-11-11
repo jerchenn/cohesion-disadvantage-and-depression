@@ -1,4 +1,4 @@
-# build_cox3.R -- corrected primary Cox dataset addressing referee concerns 1-3, 8.
+# build_cox3.R -- primary Cox analysis dataset for the manuscript.
 #  (3) healthcare utilization is now counted STRICTLY BEFORE baseline (condition_start_date < expo_date),
 #      not over all history, so log_util cannot be a post-baseline collider/mediator.
 #  (1) adds prior_ehr_days (expo_date - first EHR record) so washout can be stratified by length of
@@ -61,7 +61,7 @@ FROM expo LEFT JOIN ehr USING(person_id) LEFT JOIN dep USING(person_id) LEFT JOI
 for (v in c("expo_date","first_dep","first_ehr","last_ehr")) raw[[v]] <- as.Date(raw[[v]])
 raw$n_cond <- as.numeric(raw$n_cond)
 
-## attrition ladder (referee concern 2)
+## attrition ladder
 cat("=== Attrition ladder ===\n")
 cat(sprintf("Answered cohesion item (expo):                 %d\n", nrow(raw)))
 s1 <- raw[!is.na(raw$first_ehr), ];                        cat(sprintf("  with any EHR condition record:               %d\n", nrow(s1)))

@@ -1,8 +1,8 @@
-# etable_robustness.R -- Paper 1 supplement eTable: cohesion -> incident depression, robustness to the
+# etable_robustness.R -- supplement eTable 5: cohesion -> incident depression, robustness to the
 # individual/structural adversity exposome, pooled and by area-deprivation tertile.
 #   Panel A: pooled re-anchored cohort -- base spec, each adversity added singly, then all five jointly.
 #   Panel B: by area-deprivation tertile -- base vs + full exposome.
-#   Footnote: published full-cohort primary estimate + cohesion x deprivation interaction.
+#   Footnote: main-text full-cohort primary estimate + cohesion x deprivation interaction.
 # Covariate parameterization matches fig_stratified.R (collapsed race/ethnicity, continuous income/
 # education) so every model converges cleanly (no sparse addNA factor cells -> no separation). Re-anchored
 # cohort (cox_dat2.rds) so adversity measures precede follow-up. Aggregate only; writes etable_robustness.csv.
@@ -79,7 +79,7 @@ for (pn in unique(ET$panel)){ cat(sprintf("\n-- %s --\n", pn)); s <- ET[ET$panel
     cat(sprintf("  %-34s  HR %.3f (%s)  P=%s  [n=%d, events=%d]\n",
                 s$model[i], s$coh_HR[i], s$CI[i], format(s$p[i]), s$n[i], s$events[i])) }
 
-## footnote: published primary (full cohort, factor spec) + interaction
+## footnote: main-text primary (full cohort, factor spec) + interaction
 ref <- coxph(Surv(time_days,event) ~ z_cohesion + age + sex + race + ethnicity +
                income_f + educ_f + emp_f + log_util, readRDS("cox_dat.rds"))
 rb <- summary(ref)$coefficients["z_cohesion",]; rc2 <- exp(confint(ref)["z_cohesion",])
@@ -87,7 +87,7 @@ d$dep_z <- z(d$deprivation_index)
 mi <- coxph(Surv(time_days,event) ~ z_cohesion*dep_z + age + sex_c + race_c + ethn_c +
               income_m + educ_m + log_util, d)
 ib <- summary(mi)$coefficients["z_cohesion:dep_z",]; ic <- exp(confint(mi)["z_cohesion:dep_z",])
-cat(sprintf("\nFootnotes:\n  Published primary (full cohort, n=%d, events=%d): HR %.3f (%.3f-%.3f), P=%s\n",
+cat(sprintf("\nFootnotes:\n  Main-text primary (full cohort, n=%d, events=%d): HR %.3f (%.3f-%.3f), P=%s\n",
             ref$n, ref$nevent, exp(rb[["coef"]]), rc2[1], rc2[2], signif(rb[[ncol(summary(ref)$coefficients)]],3)))
 cat(sprintf("  Cohesion x deprivation interaction (per SD x SD): HR %.3f (%.3f-%.3f), P=%s\n",
             exp(ib[["coef"]]), ic[1], ic[2], signif(ib[[ncol(summary(mi)$coefficients)]],3)))

@@ -7,8 +7,8 @@
 # primary model tests whether the cohesion association survives adjustment for baseline mental
 # health. Report the z_cohesion HR before vs after adjustment.
 #
-# INPUT : cox_dat.rds (from build_cox.R)     OUTPUT: printed HRs
-# RUN AFTER: build_cox.R.   Needs: tidyverse, survival, bigrquery.
+# INPUT : cox_dat3.rds (from build_cox3.R)   OUTPUT: printed HRs
+# RUN AFTER: build_cox3.R.  Needs: tidyverse, survival, bigrquery.
 
 library(tidyverse); library(survival); library(bigrquery)
 cdr  <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")
@@ -16,7 +16,7 @@ run_sql <- function(q) bq_table_download(bq_project_query(proj, q), bigint = "ch
 
 cox <- readRDS("cox_dat3.rds")
 
-## 1. re-derive each person's baseline date = earliest cohesion-item survey date (as in build_cox.R).
+## 1. re-derive each person's baseline date = earliest cohesion-item survey date (as in build_cox3.R).
 ##    (ds_survey date column is survey_datetime; adjust here if your CDR names it differently.)
 bl <- run_sql(sprintf("
   SELECT person_id, MIN(DATE(survey_datetime)) AS bl_date

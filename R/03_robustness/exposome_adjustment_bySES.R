@@ -1,4 +1,4 @@
-# exposome_adjustment_bySES.R -- Paper 1 supplement, stratified. Two questions within each area-deprivation
+# exposome_adjustment_bySES.R -- supplement eTable 5, stratified. Two questions within each area-deprivation
 # tertile (the disadvantage measure from ds_zip_code_socioeconomic, as in fig_stratified.R):
 #   (1) is the cohesion -> incident-depression effect present in each disadvantage stratum? (effect modification)
 #   (2) does adjustment for the adversity exposome attenuate it consistently across strata?
