@@ -29,7 +29,7 @@ map5 <- c("Strongly disagree"=1,"Disagree"=2,"Neutral (neither agree nor disagre
 map4 <- c("Strongly disagree"=1,"Disagree"=2,"Agree"=3,"Strongly agree"=4)
 happy_map   <- c("Extremely happy"=6,"Very happy"=5,"Moderately happy"=4,"Moderately unhappy"=3,"Very unhappy"=2,"Extremely unhappy"=1)
 meaning_map <- c("Not at all"=1,"A little"=2,"A moderate amount"=3,"Very much"=4,"An extreme amount"=5)
-na_vals <- c("Don't know/Not sure","PMI: Skip","PMI: Prefer Not To Answer","Skip","Don't know","Prefer not to answer")
+na_vals <- c("Don't know/Not sure","PMI: Skip","PMI: Prefer Not To Answer","PMI: Dont Know","Skip","Don't know","Prefer not to answer","Response removed due to invalid value")
 rc <- function(x,m){ x<-as.character(x); x[x %in% na_vals]<-NA
   bad <- setdiff(unique(x[!is.na(x)]), names(m))
   if (length(bad)) stop("rc(): answer strings not in the recode map (would become NA): ", paste(bad, collapse=" | "))

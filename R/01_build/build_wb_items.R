@@ -45,7 +45,7 @@ d <- merge(wide, demo, by="person_id")
 
 ## ---- recode maps -------------------------------------------------------------
 na_vals <- c("Don't know/Not sure","Does not apply to my neighborhood","PMI: Skip",
-             "PMI: Prefer Not To Answer","Skip","Don't know","Prefer not to answer",
+             "PMI: Prefer Not To Answer","PMI: Dont Know","Skip","Don't know","Prefer not to answer",
              "Response removed due to invalid value")
 rc <- function(x,m){ x<-as.character(x); x[x %in% na_vals]<-NA
   bad <- setdiff(unique(x[!is.na(x)]), names(m))

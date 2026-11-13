@@ -24,7 +24,7 @@ sv$item <- names(ids)[match(as.numeric(sv$question_concept_id), ids)]
 wide <- tidyr::pivot_wider(sv[,c("person_id","item","answer")], names_from=item, values_from=answer)
 map5 <- c("Strongly disagree"=1,"Disagree"=2,"Neutral (neither agree nor disagree)"=3,"Agree"=4,"Strongly agree"=5)
 map4 <- c("Strongly disagree"=1,"Disagree"=2,"Agree"=3,"Strongly agree"=4)
-na_vals <- c("Don't know/Not sure","PMI: Skip","PMI: Prefer Not To Answer","Skip","Don't know","Prefer not to answer")
+na_vals <- c("Don't know/Not sure","PMI: Skip","PMI: Prefer Not To Answer","PMI: Dont Know","Skip","Don't know","Prefer not to answer","Response removed due to invalid value")
 rc <- function(x,m){ x<-as.character(x); x[x %in% na_vals]<-NA; as.numeric(m[x]) }
 for (nm in c("help","getalong","trust","values")) wide[[nm]] <- rc(wide[[nm]], map5)
 wide$watchout <- rc(wide$watchout, map4)

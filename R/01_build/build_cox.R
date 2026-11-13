@@ -25,7 +25,7 @@ d <- merge(wide, demo, by="person_id")
 ## 2. score cohesion (watchout 4-pt, others 5-pt: z each item, average, re-z) + SES
 map5 <- c("Strongly disagree"=1,"Disagree"=2,"Neutral (neither agree nor disagree)"=3,"Agree"=4,"Strongly agree"=5)
 map4 <- c("Strongly disagree"=1,"Disagree"=2,"Agree"=3,"Strongly agree"=4)
-na_vals <- c("Don't know/Not sure","PMI: Skip","PMI: Prefer Not To Answer","Skip","Don't know","Prefer not to answer")
+na_vals <- c("Don't know/Not sure","PMI: Skip","PMI: Prefer Not To Answer","PMI: Dont Know","Skip","Don't know","Prefer not to answer","Response removed due to invalid value")
 rc <- function(x,m){ x<-as.character(x); x[x %in% na_vals]<-NA
   bad <- setdiff(unique(x[!is.na(x)]), names(m))
   if (length(bad)) stop("rc(): answer strings not in the recode map (would become NA): ", paste(bad, collapse=" | "))
