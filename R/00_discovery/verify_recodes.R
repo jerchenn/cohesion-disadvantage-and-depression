@@ -59,7 +59,7 @@ maps <- list(map5=map5, map4=map4, map4_sw=map4_sw, income_map=income_map,
              educ_map_current=educ_map_current, educ_map_fixed=educ_map_fixed,
              happy_map=happy_map, meaning_map=meaning_map, pcl_map=pcl_map, phq_map=phq_map,
              disc6=disc6, food3=food3)
-cnt_pos <- "Yes|Once|More than once"; cnt_neg <- "No|Never"       # as in etable_robustness.R cnt()
+cnt_pos <- "Yes|Once|More than once"; cnt_neg <- "^No$|: No$|^Never$"       # as in etable_robustness.R cnt()
 
 ## ---- pull the answer distributions (one query, aggregate) ---------------------------------------
 all_ids <- unique(unlist(spec))
@@ -80,7 +80,7 @@ for (mname in names(spec)) {
     if (mname == "cnt_regex") {
       status <- ifelse(grepl(cnt_pos, sub$answer), "pos=1",
                 ifelse(grepl(cnt_neg, sub$answer), "neg=0",
-                ifelse(sub$answer %in% na_vals, "skip", "UNMAPPED->NA")))
+                ifelse(sub$answer %in% na_vals | grepl("Prefer Not To Answer", sub$answer), "skip", "UNMAPPED->NA")))
     } else if (mname == "employment_raw") {
       status <- ifelse(sub$answer %in% na_vals, "skip", "level")
     } else {

@@ -34,7 +34,7 @@ getcol <- function(id){ c <- W[[as.character(id)]]; if (is.null(c)) rep(NA,nrow(
 rc <- function(x,scale){ x<-as.character(x); x[x %in% na_vals]<-NA; as.numeric(S[[scale]][x]) }
 z  <- function(v) as.numeric(scale(v))
 idx_scale <- function(ids,scale){ M <- sapply(ids, function(id) z(rc(getcol(id),scale))); z(rowMeans(M,na.rm=TRUE)) }
-cnt <- function(ids,pos="Yes|Once|More than once",neg="No|Never"){
+cnt <- function(ids,pos="Yes|Once|More than once",neg="^No$|: No$|^Never$"){
   m <- sapply(ids, function(id){ a<-as.character(getcol(id)); ifelse(grepl(pos,a),1,ifelse(grepl(neg,a),0,NA)) })
   z(rowMeans(m,na.rm=TRUE)*ncol(m)) }
 ADV <- data.frame(person_id=W$person_id,

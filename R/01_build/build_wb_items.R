@@ -47,7 +47,10 @@ d <- merge(wide, demo, by="person_id")
 na_vals <- c("Don't know/Not sure","Does not apply to my neighborhood","PMI: Skip",
              "PMI: Prefer Not To Answer","Skip","Don't know","Prefer not to answer",
              "Response removed due to invalid value")
-rc <- function(x,m){ x<-as.character(x); x[x %in% na_vals]<-NA; as.numeric(m[x]) }
+rc <- function(x,m){ x<-as.character(x); x[x %in% na_vals]<-NA
+  bad <- setdiff(unique(x[!is.na(x)]), names(m))
+  if (length(bad)) stop("rc(): answer strings not in the recode map (would become NA): ", paste(bad, collapse=" | "))
+  as.numeric(m[x]) }
 map5_agree <- c("Strongly disagree"=1,"Disagree"=2,"Neutral (neither agree nor disagree)"=3,"Agree"=4,"Strongly agree"=5)
 map4_agree <- c("Strongly disagree"=1,"Disagree"=2,"Agree"=3,"Strongly agree"=4)
 map4_sw    <- c("Strongly disagree"=1,"Somewhat disagree"=2,"Somewhat agree"=3,"Strongly agree"=4)
@@ -84,7 +87,9 @@ wb_names <- names(tier)                                        # happy, meaning,
 
 ## ---- SES numeric -------------------------------------------------------------
 income_map <- c("Annual Income: less 10k"=1,"Annual Income: 10k 25k"=2,"Annual Income: 25k 35k"=3,"Annual Income: 35k 50k"=4,"Annual Income: 50k 75k"=5,"Annual Income: 75k 100k"=6,"Annual Income: 100k 150k"=7,"Annual Income: 150k 200k"=8,"Annual Income: more 200k"=9)
-educ_map <- c("Less than a high school degree or equivalent"=1,"Highest Grade: Twelve Or GED"=2,"Highest Grade: College One to Three"=3,"College graduate or advanced degree"=4)
+educ_map <- c("Highest Grade: Never Attended"=1,"Highest Grade: One Through Four"=1,"Highest Grade: Five Through Eight"=1,
+              "Highest Grade: Nine Through Eleven"=1,"Highest Grade: Twelve Or GED"=2,"Highest Grade: College One to Three"=3,
+              "Highest Grade: College Graduate"=4,"Highest Grade: Advanced Degree"=4)  # the 8 strings in ds_survey (verify_recodes.R)
 d$income_n <- rc(d$income, income_map); d$educ_n <- rc(d$education, educ_map)
 
 ## ---- prospective incident-depression outcome (baseline = happy-item date) ----

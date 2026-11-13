@@ -27,7 +27,7 @@ W <- tidyr::pivot_wider(sv[,c("person_id","qid","answer")], names_from=qid, valu
 getcol<-function(id){c<-W[[as.character(id)]]; if(is.null(c)) rep(NA,nrow(W)) else c}
 rc<-function(x,s){x<-as.character(x); x[x%in%na_vals]<-NA; as.numeric(S[[s]][x])}; z<-function(v) as.numeric(scale(v))
 idx<-function(ids,s){M<-sapply(ids,function(id) z(rc(getcol(id),s))); z(rowMeans(M,na.rm=TRUE))}
-cnt<-function(ids,pos="Yes|Once|More than once",neg="No|Never"){m<-sapply(ids,function(id){a<-as.character(getcol(id)); ifelse(grepl(pos,a),1,ifelse(grepl(neg,a),0,NA))}); z(rowMeans(m,na.rm=TRUE)*ncol(m))}
+cnt<-function(ids,pos="Yes|Once|More than once",neg="^No$|: No$|^Never$"){m<-sapply(ids,function(id){a<-as.character(getcol(id)); ifelse(grepl(pos,a),1,ifelse(grepl(neg,a),0,NA))}); z(rowMeans(m,na.rm=TRUE)*ncol(m))}
 ADV <- data.frame(person_id=W$person_id, ace=cnt(ace_ids), trauma=cnt(trauma_ids),
                   disability=cnt(disab_ids), discrim=idx(disc_ids,"disc6"), foodinsec=idx(food_ids,"food3"))
 

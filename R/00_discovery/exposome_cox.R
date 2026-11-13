@@ -87,7 +87,7 @@ for (fn in names(fam)){
   its <- fam[[fn]]; M <- sapply(names(its), function(nm){
     s<-its[[nm]]; zz<-z(rc(getcol(s$id), s$scale)); if (isTRUE(s$rev)) -zz else zz })
   FAM[[fn]] <- z(rowMeans(M, na.rm=TRUE)) }
-cnt <- function(ids, pos="Yes|Once|More than once", neg="No|Never"){
+cnt <- function(ids, pos="Yes|Once|More than once", neg="^No$|: No$|^Never$"){
   m <- sapply(ids, function(id){ a<-as.character(getcol(id)); ifelse(grepl(pos,a),1,ifelse(grepl(neg,a),0,NA)) })
   rowMeans(m, na.rm=TRUE) * ncol(m) }
 FAM$disability <- z(cnt(disab_ids)); FAM$ace <- z(cnt(ace_ids)); FAM$trauma <- z(cnt(trauma_ids))

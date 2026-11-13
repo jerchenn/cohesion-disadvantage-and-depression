@@ -30,7 +30,10 @@ map4 <- c("Strongly disagree"=1,"Disagree"=2,"Agree"=3,"Strongly agree"=4)
 happy_map   <- c("Extremely happy"=6,"Very happy"=5,"Moderately happy"=4,"Moderately unhappy"=3,"Very unhappy"=2,"Extremely unhappy"=1)
 meaning_map <- c("Not at all"=1,"A little"=2,"A moderate amount"=3,"Very much"=4,"An extreme amount"=5)
 na_vals <- c("Don't know/Not sure","PMI: Skip","PMI: Prefer Not To Answer","Skip","Don't know","Prefer not to answer")
-rc <- function(x,m){ x<-as.character(x); x[x %in% na_vals]<-NA; as.numeric(m[x]) }
+rc <- function(x,m){ x<-as.character(x); x[x %in% na_vals]<-NA
+  bad <- setdiff(unique(x[!is.na(x)]), names(m))
+  if (length(bad)) stop("rc(): answer strings not in the recode map (would become NA): ", paste(bad, collapse=" | "))
+  as.numeric(m[x]) }
 for (nm in c("help","getalong","trust","values")) d[[nm]] <- rc(d[[nm]], map5)
 d$watchout <- rc(d$watchout, map4)
 Z <- scale(as.matrix(d[c("help","getalong","trust","values","watchout")]))
@@ -40,7 +43,9 @@ d$happy_n <- rc(d$happy, happy_map); d$meaning_n <- rc(d$meaning, meaning_map)
 d$wb_index <- rowMeans(cbind(scale(d$happy_n)[,1], scale(d$meaning_n)[,1]), na.rm=TRUE)
 d$z_wb <- scale(d$wb_index)[,1]
 income_map <- c("Annual Income: less 10k"=1,"Annual Income: 10k 25k"=2,"Annual Income: 25k 35k"=3,"Annual Income: 35k 50k"=4,"Annual Income: 50k 75k"=5,"Annual Income: 75k 100k"=6,"Annual Income: 100k 150k"=7,"Annual Income: 150k 200k"=8,"Annual Income: more 200k"=9)
-educ_map <- c("Less than a high school degree or equivalent"=1,"Highest Grade: Twelve Or GED"=2,"Highest Grade: College One to Three"=3,"College graduate or advanced degree"=4)
+educ_map <- c("Highest Grade: Never Attended"=1,"Highest Grade: One Through Four"=1,"Highest Grade: Five Through Eight"=1,
+              "Highest Grade: Nine Through Eleven"=1,"Highest Grade: Twelve Or GED"=2,"Highest Grade: College One to Three"=3,
+              "Highest Grade: College Graduate"=4,"Highest Grade: Advanced Degree"=4)  # the 8 strings in ds_survey (verify_recodes.R)
 d$income_n <- rc(d$income, income_map); d$educ_n <- rc(d$education, educ_map)
 emp <- as.character(d$employment); emp[emp %in% na_vals] <- NA
 d$income_f <- addNA(factor(d$income_n)); d$educ_f <- addNA(factor(d$educ_n)); d$emp_f <- addNA(factor(emp))

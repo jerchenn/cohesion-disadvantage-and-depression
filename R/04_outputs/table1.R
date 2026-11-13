@@ -10,13 +10,15 @@ race_eth <- function(d) with(d, ifelse(ethnicity=="Hispanic or Latino","Hispanic
    ifelse(race=="Asian","Asian","Other/Not reported")))))
 inc_cat <- function(d) ifelse(is.na(d$income_n),"Not reported",
    ifelse(d$income_n<=3,"<$35k", ifelse(d$income_n<=5,"$35k-$75k","≥$75k")))
+educ_cat <- function(d) ifelse(is.na(d$educ_n),"Not reported",
+   c("1"="Less than high school","2"="High school or GED","3"="Some college","4"="College graduate or higher")[as.character(d$educ_n)])
 
 npct <- function(x,v) sprintf("%d (%.1f)", sum(x==v,na.rm=TRUE), 100*mean(x==v,na.rm=TRUE))
 msd  <- function(x)   sprintf("%.1f (%.1f)", mean(x,na.rm=TRUE), sd(x,na.rm=TRUE))
 miqr <- function(x){q<-quantile(x,c(.5,.25,.75),na.rm=TRUE); sprintf("%.1f (%.1f-%.1f)",q[1],q[2],q[3])}
 
 summ <- function(d){
-  d$re <- race_eth(d); d$ic <- inc_cat(d); fu <- d$time_days/365.25
+  d$re <- race_eth(d); d$ic <- inc_cat(d); d$ec <- educ_cat(d); fu <- d$time_days/365.25
   c(
    "No."                                = format(nrow(d), big.mark=" "),
    "Incident depression, No. (%)"       = npct(d$event,1),
@@ -32,6 +34,11 @@ summ <- function(d){
    "  Income $35k-$75k"                 = npct(d$ic,"$35k-$75k"),
    "  Income ≥$75k"                = npct(d$ic,"≥$75k"),
    "  Income not reported"              = npct(d$ic,"Not reported"),
+   "  Less than high school"           = npct(d$ec,"Less than high school"),
+   "  High school or GED"              = npct(d$ec,"High school or GED"),
+   "  Some college"                    = npct(d$ec,"Some college"),
+   "  College graduate or higher"      = npct(d$ec,"College graduate or higher"),
+   "  Education not reported"          = npct(d$ec,"Not reported"),
    "Pre-baseline EHR conditions, median (IQR)" = miqr(d$n_cond),
    "Cohesion score, mean (SD)"          = msd(d$z_cohesion))
 }
@@ -61,5 +68,5 @@ e1 <- data.frame(Characteristic=names(summ(cox)),
 write.csv(e1, "etable1.csv", row.names=FALSE)
 cat("\n=== eTABLE 1 (subcohort comparison) ===\n"); print(e1, row.names=FALSE)
 cat("\nWrote table1.csv and etable1.csv\n")
-cat("NOTE: check the education variable separately; educ_n==4 (college graduate) appeared\n")
-cat("absent in the cohesion cohort (response-string mapping issue) -> income used for SES here.\n")
+cat("Education categories come from the corrected educ_map in build_cox3.R (all 8 ds_survey strings mapped);\n")
+cat("rebuild cox_dat3.rds before trusting the education rows.\n")
