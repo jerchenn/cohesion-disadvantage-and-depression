@@ -17,16 +17,20 @@ cat(sprintf("rows %s | unique person_id %s | events %s (%.2f%%)\n", mask(nrow(d)
             mask(sum(d$event)), 100*mean(d$event)))
 cat(sprintf("event values: %s | time_days <= 0: %s | time_days NA: %s\n",
             paste(sort(unique(d$event)), collapse=","), mask(sum(d$time_days <= 0, na.rm=TRUE)), mask(sum(is.na(d$time_days)))))
-cat(sprintf("follow-up years: min %.2f, median %.2f, 95th %.2f, max %.2f\n",
-            min(d$time_days)/365.25, median(d$time_days)/365.25, quantile(d$time_days,.95)/365.25, max(d$time_days)/365.25))
-cat(sprintf("baseline (expo_date) range: %s to %s\n", min(d$expo_date), max(d$expo_date)))
-cat(sprintf("age: min %.1f, median %.1f, max %.1f | under 18: %s | over 100: %s | NA: %s\n",
-            min(d$age,na.rm=TRUE), median(d$age,na.rm=TRUE), max(d$age,na.rm=TRUE),
+# percentiles only: a minimum or maximum is a value from one participant and is not printed
+qf <- function(x, p) quantile(x, p, na.rm=TRUE)
+cat(sprintf("follow-up years: 1st pct %.2f, median %.2f, 99th pct %.2f | over 3.5 y: %s\n",
+            qf(d$time_days,.01)/365.25, median(d$time_days)/365.25, qf(d$time_days,.99)/365.25, mask(sum(d$time_days > 3.5*365.25))))
+cat(sprintf("baseline (expo_date): 1st pct %s, 99th pct %s | before 2021-11: %s | after 2024-12: %s\n",
+            qf(as.numeric(d$expo_date),.01) |> as.Date(origin="1970-01-01"), qf(as.numeric(d$expo_date),.99) |> as.Date(origin="1970-01-01"),
+            mask(sum(d$expo_date < as.Date("2021-11-01"))), mask(sum(d$expo_date > as.Date("2024-12-31")))))
+cat(sprintf("age: 1st pct %.1f, median %.1f, 99th pct %.1f | under 18: %s | over 100: %s | NA: %s\n",
+            qf(d$age,.01), median(d$age,na.rm=TRUE), qf(d$age,.99),
             mask(sum(d$age < 18, na.rm=TRUE)), mask(sum(d$age > 100, na.rm=TRUE)), mask(sum(is.na(d$age)))))
-cat(sprintf("prior_ehr_days: min %.0f, median %.0f | below 365 (should be none): %s\n",
-            min(d$prior_ehr_days), median(d$prior_ehr_days), mask(sum(d$prior_ehr_days < 365))))
-cat(sprintf("n_cond: zero %s | median %.0f | log_util range %.2f to %.2f\n",
-            mask(sum(d$n_cond == 0)), median(d$n_cond), min(d$log_util), max(d$log_util)))
+cat(sprintf("prior_ehr_days: 1st pct %.0f, median %.0f | below 365 (should be none): %s\n",
+            qf(d$prior_ehr_days,.01), median(d$prior_ehr_days), mask(sum(d$prior_ehr_days < 365))))
+cat(sprintf("n_cond: zero %s | median %.0f | log_util 1st-99th pct %.2f to %.2f\n",
+            mask(sum(d$n_cond == 0)), median(d$n_cond), qf(d$log_util,.01), qf(d$log_util,.99)))
 cat("\nevents by year of baseline (an error in date handling shows up as a year with no events):\n")
 yr <- format(d$expo_date, "%Y"); print(data.frame(year=names(table(yr)), n=mask(table(yr)),
      events=mask(tapply(d$event, yr, sum)), fu_median_y=sprintf("%.2f", tapply(d$time_days, yr, median)/365.25)), row.names=FALSE)
