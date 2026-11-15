@@ -46,7 +46,7 @@ impute_once <- function(delta_inc = 0, delta_edu = 0){
   di$education <- pmm_impute(d$education, cbind(X0, di$income))
   di$income <- pmm_impute(d$income, cbind(X0, di$education))          # second pass with imputed education
   ec <- pmm_impute(as.numeric(emp_code), cbind(X0, di$income, di$education))
-  di$employment <- factor(code2lev[as.character(round(ec))], levels = names(code2lev))
+  di$employment <- factor(unname(code2lev[as.character(round(ec))]), levels = unname(code2lev))
   ## delta adjustment (MNAR): shift IMPUTED values only; bracket scale, floored/capped
   mi_inc <- is.na(d$income); di$income[mi_inc] <- pmin(pmax(di$income[mi_inc] + delta_inc, 1), 9)
   mi_edu <- is.na(d$education); di$education[mi_edu] <- pmin(pmax(di$education[mi_edu] + delta_edu, 1), 4)
