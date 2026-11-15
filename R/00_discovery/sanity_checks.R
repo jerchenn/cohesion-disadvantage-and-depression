@@ -43,14 +43,15 @@ cc <- complete.cases(d[, mv]); cat(sprintf("complete cases: %s of %s\n", mask(su
 hdr("3. Cohesion score")
 items <- c("help","getalong","trust","values","watchout")
 cat(sprintf("z_cohesion in at-risk cohort: mean %.3f, SD %.3f (standardised on all responders, so not 0/1 here)\n",
-            mean(d$z_cohesion), sd(d$z_cohesion)))
+            mean(d$z_cohesion, na.rm=TRUE), sd(d$z_cohesion, na.rm=TRUE)))
 cat("item correlation matrix (should be all positive, roughly 0.4 to 0.8):\n")
 print(round(cor(d[, items], use="pairwise"), 2))
 X <- scale(d[, items]); k <- ncol(X); a <- k/(k-1) * (1 - sum(apply(X,2,var,na.rm=TRUE)) / var(rowSums(X, na.rm=TRUE)))
 cat(sprintf("Cronbach alpha (standardised items, complete rows): %.3f (manuscript says 0.88)\n", a))
 cat("crude event rate by cohesion quintile (should fall monotonically):\n")
-q5 <- cut(d$z_cohesion, quantile(d$z_cohesion, 0:5/5), include.lowest=TRUE, labels=paste0("Q",1:5))
+q5 <- cut(d$z_cohesion, quantile(d$z_cohesion, 0:5/5, na.rm=TRUE), include.lowest=TRUE, labels=paste0("Q",1:5))
 print(data.frame(quintile=levels(q5), n=mask(table(q5)), event_pct=sprintf("%.2f", 100*tapply(d$event, q5, mean))), row.names=FALSE)
+cat(sprintf("z_cohesion NA: %s (respondents with fewer than 3 of 5 items; this alone is the 98,795 -> 96,581 drop)\n", mask(sum(is.na(d$z_cohesion)))))
 
 ## 4. crude gradients that must run the expected way ----------------------------------------------
 hdr("4. Crude event rates by covariate level (direction check; a reversed recode shows here)")
@@ -80,7 +81,7 @@ cat(sprintf("factor spec, with log_util:    HR %.5f (%.5f-%.5f)  coef on log_uti
             coef(m)["log_util"], s["log_util","Pr(>|z|)"]))
 cat(sprintf("factor spec, without log_util: HR %.5f (%.5f-%.5f)\n",
             exp(coef(m0)["z_cohesion"]), exp(confint(m0)["z_cohesion",1]), exp(confint(m0)["z_cohesion",2])))
-r <- cor(d$z_cohesion, d$log_util, use="complete"); ra <- cor(resid(lm(z_cohesion ~ age, d)), resid(lm(log_util ~ age, d)))
+r <- cor(d$z_cohesion, d$log_util, use="complete"); dd <- d[!is.na(d$z_cohesion), ]; ra <- cor(resid(lm(z_cohesion ~ age, dd)), resid(lm(log_util ~ age, dd)))
 cat(sprintf("corr(z_cohesion, log_util) = %.3f; partialling out age = %.3f  (near zero explains identical HRs)\n", r, ra))
 dc <- d[!is.na(d$zip3_as_string), ]
 mc <- coxph(as.formula(sprintf("Surv(time_days,event) ~ %s", rhs)), dc)
