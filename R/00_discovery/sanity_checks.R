@@ -52,6 +52,15 @@ cat("crude event rate by cohesion quintile (should fall monotonically):\n")
 q5 <- cut(d$z_cohesion, quantile(d$z_cohesion, 0:5/5, na.rm=TRUE), include.lowest=TRUE, labels=paste0("Q",1:5))
 print(data.frame(quintile=levels(q5), n=mask(table(q5)), event_pct=sprintf("%.2f", 100*tapply(d$event, q5, mean))), row.names=FALSE)
 cat(sprintf("z_cohesion NA: %s (respondents with fewer than 3 of 5 items; this alone is the 98,795 -> 96,581 drop)\n", mask(sum(is.na(d$z_cohesion)))))
+na_c <- is.na(d$z_cohesion)
+cat("participants without a cohesion score vs with one (is the exclusion ignorable?):\n")
+print(data.frame(group=c("no score","score"), n=mask(c(sum(na_c), sum(!na_c))),
+      event_pct=sprintf("%.2f", 100*c(mean(d$event[na_c]), mean(d$event[!na_c]))),
+      age_mean=sprintf("%.1f", c(mean(d$age[na_c]), mean(d$age[!na_c]))),
+      female_pct=sprintf("%.1f", 100*c(mean(d$sex[na_c]=="Female"), mean(d$sex[!na_c]=="Female"))),
+      income_NA_pct=sprintf("%.1f", 100*c(mean(is.na(d$income_n[na_c])), mean(is.na(d$income_n[!na_c])))),
+      BAplus_pct=sprintf("%.1f", 100*c(mean(d$educ_n[na_c]==4, na.rm=TRUE), mean(d$educ_n[!na_c]==4, na.rm=TRUE))),
+      n_cond_median=c(median(d$n_cond[na_c]), median(d$n_cond[!na_c]))), row.names=FALSE)
 
 ## 4. crude gradients that must run the expected way ----------------------------------------------
 hdr("4. Crude event rates by covariate level (direction check; a reversed recode shows here)")
