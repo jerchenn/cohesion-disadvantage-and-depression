@@ -1,0 +1,116 @@
+# sanity_checks.R -- one pass over cox_dat3.rds looking for errors of the education-recode kind:
+# a variable that is silently degenerate, a level in the wrong direction, a sample that differs
+# between scripts without being said, a time variable that cannot be what it claims.
+# Prints aggregates only (any cell below 20 is shown as "<20"). Reads cox_dat3.rds; one BigQuery
+# query for the depression concept list. Needs: survival, bigrquery.
+
+library(survival)
+d <- readRDS("cox_dat3.rds")
+mask <- function(x){ x <- as.numeric(x); ifelse(!is.na(x) & x > 0 & x < 20, "<20", format(x, big.mark=",", trim=TRUE)) }
+tab  <- function(x, lab){ t <- table(x, useNA="ifany"); cat(sprintf("\n-- %s --\n", lab))
+  print(data.frame(level=names(t), n=mask(t), pct=sprintf("%.1f", 100*as.numeric(t)/length(x))), row.names=FALSE) }
+hdr  <- function(s) cat("\n==========", s, "==========\n")
+
+## 1. integrity ---------------------------------------------------------------------------------
+hdr("1. Integrity of the at-risk file")
+cat(sprintf("rows %s | unique person_id %s | events %s (%.2f%%)\n", mask(nrow(d)), mask(length(unique(d$person_id))),
+            mask(sum(d$event)), 100*mean(d$event)))
+cat(sprintf("event values: %s | time_days <= 0: %s | time_days NA: %s\n",
+            paste(sort(unique(d$event)), collapse=","), mask(sum(d$time_days <= 0, na.rm=TRUE)), mask(sum(is.na(d$time_days)))))
+cat(sprintf("follow-up years: min %.2f, median %.2f, 95th %.2f, max %.2f\n",
+            min(d$time_days)/365.25, median(d$time_days)/365.25, quantile(d$time_days,.95)/365.25, max(d$time_days)/365.25))
+cat(sprintf("baseline (expo_date) range: %s to %s\n", min(d$expo_date), max(d$expo_date)))
+cat(sprintf("age: min %.1f, median %.1f, max %.1f | under 18: %s | over 100: %s | NA: %s\n",
+            min(d$age,na.rm=TRUE), median(d$age,na.rm=TRUE), max(d$age,na.rm=TRUE),
+            mask(sum(d$age < 18, na.rm=TRUE)), mask(sum(d$age > 100, na.rm=TRUE)), mask(sum(is.na(d$age)))))
+cat(sprintf("prior_ehr_days: min %.0f, median %.0f | below 365 (should be none): %s\n",
+            min(d$prior_ehr_days), median(d$prior_ehr_days), mask(sum(d$prior_ehr_days < 365))))
+cat(sprintf("n_cond: zero %s | median %.0f | log_util range %.2f to %.2f\n",
+            mask(sum(d$n_cond == 0)), median(d$n_cond), min(d$log_util), max(d$log_util)))
+cat("\nevents by year of baseline (an error in date handling shows up as a year with no events):\n")
+yr <- format(d$expo_date, "%Y"); print(data.frame(year=names(table(yr)), n=mask(table(yr)),
+     events=mask(tapply(d$event, yr, sum)), fu_median_y=sprintf("%.2f", tapply(d$time_days, yr, median)/365.25)), row.names=FALSE)
+
+## 2. every covariate: levels, counts, missingness -------------------------------------------------
+hdr("2. Covariate levels in the at-risk cohort (a degenerate variable has one level or mostly NA)")
+for (v in c("sex","race","ethnicity","income_f","educ_f","emp_f")) tab(d[[v]], v)
+cat("\nNA count per model variable (this is what drops 98,795 to the complete-case n):\n")
+mv <- c("z_cohesion","age","sex","race","ethnicity","income_f","educ_f","emp_f","log_util","time_days","event")
+print(data.frame(variable=mv, n_NA=mask(sapply(mv, function(v) sum(is.na(d[[v]]))))), row.names=FALSE)
+cc <- complete.cases(d[, mv]); cat(sprintf("complete cases: %s of %s\n", mask(sum(cc)), mask(nrow(d))))
+
+## 3. cohesion score ------------------------------------------------------------------------------
+hdr("3. Cohesion score")
+items <- c("help","getalong","trust","values","watchout")
+cat(sprintf("z_cohesion in at-risk cohort: mean %.3f, SD %.3f (standardised on all responders, so not 0/1 here)\n",
+            mean(d$z_cohesion), sd(d$z_cohesion)))
+cat("item correlation matrix (should be all positive, roughly 0.4 to 0.8):\n")
+print(round(cor(d[, items], use="pairwise"), 2))
+X <- scale(d[, items]); k <- ncol(X); a <- k/(k-1) * (1 - sum(apply(X,2,var,na.rm=TRUE)) / var(rowSums(X, na.rm=TRUE)))
+cat(sprintf("Cronbach alpha (standardised items, complete rows): %.3f (manuscript says 0.88)\n", a))
+cat("crude event rate by cohesion quintile (should fall monotonically):\n")
+q5 <- cut(d$z_cohesion, quantile(d$z_cohesion, 0:5/5), include.lowest=TRUE, labels=paste0("Q",1:5))
+print(data.frame(quintile=levels(q5), n=mask(table(q5)), event_pct=sprintf("%.2f", 100*tapply(d$event, q5, mean))), row.names=FALSE)
+
+## 4. crude gradients that must run the expected way ----------------------------------------------
+hdr("4. Crude event rates by covariate level (direction check; a reversed recode shows here)")
+crude <- function(v, lab){ t <- table(d[[v]], useNA="ifany"); e <- tapply(d$event, addNA(d[[v]]), mean)
+  cat(sprintf("\n-- %s --\n", lab)); print(data.frame(level=names(t), n=mask(t), event_pct=sprintf("%.2f", 100*e)), row.names=FALSE) }
+crude("educ_f", "education 1=<HS 2=HS/GED 3=some college 4=BA+ (rate should fall with level)")
+crude("income_f", "income 1=<10k ... 9=>200k (rate should fall with level)")
+crude("emp_f", "employment (Unable To Work should be highest)")
+crude("sex", "sex (female higher)")
+ad <- cut(d$age, c(17,30,40,50,60,70,80,120)); crude_ad <- tapply(d$event, ad, mean)
+cat("\n-- age band --\n"); print(data.frame(band=names(crude_ad), n=mask(table(ad)), event_pct=sprintf("%.2f", 100*crude_ad)), row.names=FALSE)
+
+## 5. the primary model, coefficient by coefficient ------------------------------------------------
+hdr("5. Primary model: every coefficient (a level with HR far from 1 and a huge CI is a sparse or broken level)")
+rhs <- "z_cohesion + age + sex + race + ethnicity + income_f + educ_f + emp_f + log_util"
+m <- coxph(as.formula(sprintf("Surv(time_days,event) ~ %s", rhs)), d)
+s <- summary(m)$coefficients; ci <- suppressMessages(exp(confint(m)))
+print(data.frame(term=rownames(s), HR=sprintf("%.3f", exp(s[,"coef"])), lo=sprintf("%.3f", ci[,1]), hi=sprintf("%.3f", ci[,2]),
+                 p=signif(s[,"Pr(>|z|)"], 2)), row.names=FALSE)
+cat(sprintf("n=%s events=%s\n", mask(m$n), mask(m$nevent)))
+
+## 6. the three "primary" numbers printed by three scripts ----------------------------------------
+hdr("6. Why cox_model3.R, mi_sensitivity.R and etable_robustness.R print different primary HRs")
+m0 <- coxph(as.formula(sprintf("Surv(time_days,event) ~ %s", sub(" \\+ log_util","",rhs))), d)
+cat(sprintf("factor spec, with log_util:    HR %.5f (%.5f-%.5f)  coef on log_util = %.4f (p=%.2g)\n",
+            exp(coef(m)["z_cohesion"]), exp(confint(m)["z_cohesion",1]), exp(confint(m)["z_cohesion",2]),
+            coef(m)["log_util"], s["log_util","Pr(>|z|)"]))
+cat(sprintf("factor spec, without log_util: HR %.5f (%.5f-%.5f)\n",
+            exp(coef(m0)["z_cohesion"]), exp(confint(m0)["z_cohesion",1]), exp(confint(m0)["z_cohesion",2])))
+r <- cor(d$z_cohesion, d$log_util, use="complete"); ra <- cor(resid(lm(z_cohesion ~ age, d)), resid(lm(log_util ~ age, d)))
+cat(sprintf("corr(z_cohesion, log_util) = %.3f; partialling out age = %.3f  (near zero explains identical HRs)\n", r, ra))
+dc <- d[!is.na(d$zip3_as_string), ]
+mc <- coxph(as.formula(sprintf("Surv(time_days,event) ~ %s", rhs)), dc)
+cat(sprintf("ZIP3-available subset: n=%s of %s, HR %.4f (the cluster-robust line in cox_model3.R is this sample, not the full cohort)\n",
+            mask(mc$n), mask(m$n), exp(coef(mc)["z_cohesion"])))
+d$sex_c <- factor(ifelse(d$sex %in% c("Female","Male"), as.character(d$sex), "Other"))
+d$race_c <- factor(ifelse(d$race %in% c("White","Black or African American"), as.character(d$race), "Other"))
+d$ethn_c <- factor(ifelse(d$ethnicity=="Hispanic or Latino","Hispanic","NotHispanic"))
+d$income_m <- ifelse(is.na(d$income_n), median(d$income_n,na.rm=TRUE), d$income_n)
+d$educ_m   <- ifelse(is.na(d$educ_n),   median(d$educ_n,  na.rm=TRUE), d$educ_n)
+mh <- coxph(Surv(time_days,event) ~ z_cohesion + age + sex_c + race_c + ethn_c + income_m + educ_m + log_util, d)
+cat(sprintf("harmonised/collapsed spec (figs_data.R, etable_robustness.R footnote, Figure 3): HR %.4f (%.4f-%.4f) n=%s\n",
+            exp(coef(mh)["z_cohesion"]), exp(confint(mh)["z_cohesion",1]), exp(confint(mh)["z_cohesion",2]), mask(mh$n)))
+cat("mi_sensitivity.R's 'missing-indicator primary HR 0.883' is a hard-coded string in that script, not a computed value.\n")
+
+## 7. the outcome: which depression concepts actually produce the events --------------------------
+hdr("7. Depression concept set: codes that produce the incident events (Reviewer 1 asked for this list)")
+library(bigrquery)
+cdr <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")
+run_sql <- function(q) bq_table_download(bq_project_query(proj, q), bigint = "character")
+dep_ids <- sprintf("SELECT a.descendant_concept_id FROM `%s.concept` p JOIN `%s.concept_ancestor` a ON a.ancestor_concept_id=p.concept_id JOIN `%s.concept` c ON c.concept_id=a.descendant_concept_id WHERE p.vocabulary_id='SNOMED' AND p.standard_concept='S' AND p.concept_name IN ('Depressive disorder','Major depressive disorder','Recurrent depressive disorder','Dysthymia') AND c.standard_concept='S'", cdr, cdr, cdr)
+codes <- run_sql(sprintf("
+WITH dep AS (SELECT person_id, condition_start_date, condition_concept_id FROM `%s.condition_occurrence` WHERE condition_concept_id IN (%s)),
+     first AS (SELECT person_id, MIN(condition_start_date) AS first_dep FROM dep GROUP BY person_id),
+     firstcodes AS (SELECT dep.person_id, dep.condition_concept_id FROM dep JOIN first USING(person_id) WHERE dep.condition_start_date = first.first_dep)
+SELECT c.concept_name, c.concept_code, COUNT(DISTINCT f.person_id) AS n_people
+FROM firstcodes f JOIN `%s.concept` c ON c.concept_id = f.condition_concept_id
+GROUP BY 1,2 ORDER BY n_people DESC LIMIT 40", cdr, dep_ids, cdr))
+codes$n_people <- as.numeric(codes$n_people)
+cat("Top concepts at a person's FIRST depression record (all persons in the CDR, not only the cohort; cells <20 masked):\n")
+codes$n_people <- mask(codes$n_people); print(codes, row.names=FALSE)
+cat("\nLook for concepts that are not depression (bipolar episodes, adjustment disorder, grief, perinatal screening) near the top.\n")
+cat("Also note: the washout excludes anyone with ANY of these codes before baseline; the attrition step 'free of depression' removes ~36% of the EHR-observed sample.\n")
