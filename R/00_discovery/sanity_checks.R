@@ -64,13 +64,13 @@ print(data.frame(group=c("no score","score"), n=mask(c(sum(na_c), sum(!na_c))),
 
 ## 4. crude gradients that must run the expected way ----------------------------------------------
 hdr("4. Crude event rates by covariate level (direction check; a reversed recode shows here)")
-crude <- function(v, lab){ t <- table(d[[v]], useNA="ifany"); e <- tapply(d$event, addNA(d[[v]]), mean)
+crude <- function(v, lab){ t <- table(d[[v]], useNA="ifany"); e <- sapply(names(t), function(l) if (is.na(l)) mean(d$event[is.na(d[[v]])]) else mean(d$event[!is.na(d[[v]]) & d[[v]] == l]))
   cat(sprintf("\n-- %s --\n", lab)); print(data.frame(level=names(t), n=mask(t), event_pct=sprintf("%.2f", 100*e)), row.names=FALSE) }
 crude("educ_f", "education 1=<HS 2=HS/GED 3=some college 4=BA+ (rate should fall with level)")
 crude("income_f", "income 1=<10k ... 9=>200k (rate should fall with level)")
 crude("emp_f", "employment (Unable To Work should be highest)")
 crude("sex", "sex (female higher)")
-ad <- cut(d$age, c(17,30,40,50,60,70,80,120)); crude_ad <- tapply(d$event, ad, mean)
+ad <- cut(d$age, c(0,30,40,50,60,70,80,120)); crude_ad <- tapply(d$event, ad, mean)
 cat("\n-- age band --\n"); print(data.frame(band=names(crude_ad), n=mask(table(ad)), event_pct=sprintf("%.2f", 100*crude_ad)), row.names=FALSE)
 
 ## 5. the primary model, coefficient by coefficient ------------------------------------------------
