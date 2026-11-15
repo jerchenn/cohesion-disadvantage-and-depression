@@ -45,7 +45,7 @@ rk$ethn_c<-factor(ifelse(rk$ethnicity=="Hispanic or Latino","Hispanic",
 rk$income_m<-ifelse(is.na(rk$income_n),median(rk$income_n,na.rm=TRUE),rk$income_n)
 rk$educ_m  <-ifelse(is.na(rk$educ_n),  median(rk$educ_n,  na.rm=TRUE),rk$educ_n)
 rk <- droplevels(rk)
-f  <- Surv(time_days,event) ~ z_cohesion + age + sex_c + race_c + ethn_c + income_m + educ_m + log_util
+f  <- Surv(time_days,event) ~ z_cohesion + age + sex_c + race_c + income_m + educ_m + log_util   # race_c already encodes Hispanic; a separate ethn_c term is aliased with it (coxph 'coefficient may be infinite' warning)
 hr <- function(m) sprintf("%.3f (%.3f-%.3f)", exp(coef(m)[["z_cohesion"]]),
                           exp(confint(m)["z_cohesion",1]), exp(confint(m)["z_cohesion",2]))
 mu <- coxph(f, rk)                                           # unweighted (same subset)
