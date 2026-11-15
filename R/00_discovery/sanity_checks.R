@@ -112,15 +112,41 @@ library(bigrquery)
 cdr <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")
 run_sql <- function(q) bq_table_download(bq_project_query(proj, q), bigint = "character")
 dep_ids <- sprintf("SELECT a.descendant_concept_id FROM `%s.concept` p JOIN `%s.concept_ancestor` a ON a.ancestor_concept_id=p.concept_id JOIN `%s.concept` c ON c.concept_id=a.descendant_concept_id WHERE p.vocabulary_id='SNOMED' AND p.standard_concept='S' AND p.concept_name IN ('Depressive disorder','Major depressive disorder','Recurrent depressive disorder','Dysthymia') AND c.standard_concept='S'", cdr, cdr, cdr)
-codes <- run_sql(sprintf("
+fc <- run_sql(sprintf("
 WITH dep AS (SELECT person_id, condition_start_date, condition_concept_id FROM `%s.condition_occurrence` WHERE condition_concept_id IN (%s)),
-     first AS (SELECT person_id, MIN(condition_start_date) AS first_dep FROM dep GROUP BY person_id),
-     firstcodes AS (SELECT dep.person_id, dep.condition_concept_id FROM dep JOIN first USING(person_id) WHERE dep.condition_start_date = first.first_dep)
-SELECT c.concept_name, c.concept_code, COUNT(DISTINCT f.person_id) AS n_people
-FROM firstcodes f JOIN `%s.concept` c ON c.concept_id = f.condition_concept_id
-GROUP BY 1,2 ORDER BY n_people DESC LIMIT 40", cdr, dep_ids, cdr))
-codes$n_people <- as.numeric(codes$n_people)
-cat("Top concepts at a person's FIRST depression record (all persons in the CDR, not only the cohort; cells <20 masked):\n")
-codes$n_people <- mask(codes$n_people); print(codes, row.names=FALSE)
-cat("\nLook for concepts that are not depression (bipolar episodes, adjustment disorder, grief, perinatal screening) near the top.\n")
-cat("Also note: the washout excludes anyone with ANY of these codes before baseline; the attrition step 'free of depression' removes ~36% of the EHR-observed sample.\n")
+     first AS (SELECT person_id, MIN(condition_start_date) AS first_dep FROM dep GROUP BY person_id)
+SELECT DISTINCT dep.person_id, c.concept_name, c.concept_code
+FROM dep JOIN first USING(person_id) JOIN `%s.concept` c ON c.concept_id = dep.condition_concept_id
+WHERE dep.condition_start_date = first.first_dep", cdr, dep_ids, cdr))
+ev_ids <- d$person_id[d$event == 1]
+fc$person_id <- as.character(fc$person_id); ev_ids <- as.character(ev_ids)
+inc <- fc[fc$person_id %in% ev_ids, ]
+tab <- aggregate(person_id ~ concept_name + concept_code, inc, function(x) length(unique(x)))
+tab <- tab[order(-tab$person_id), ]; names(tab)[3] <- "n_events"
+cat(sprintf("Codes at the FIRST depression record among the %s incident events in the cohort (a person can carry more than one code that day); cells <20 masked:\n", mask(length(ev_ids))))
+tab$n_events <- mask(tab$n_events); print(as.data.frame(tab), row.names = FALSE, right = FALSE)
+cat("\nAll concepts in the outcome set that appear anywhere in the CDR at a first record (top 60):\n")
+allt <- aggregate(person_id ~ concept_name + concept_code, fc, function(x) length(unique(x)))
+allt <- allt[order(-allt$person_id), ][1:min(60, nrow(allt)), ]; allt$person_id <- mask(allt$person_id)
+print(as.data.frame(allt), row.names = FALSE, right = FALSE)
+cat("\nLook for concepts that are not depression (bipolar episodes, adjustment disorder, grief, perinatal screening, mixed anxiety-depression).\n")
+cat("The washout excludes anyone with ANY of these codes before baseline; that step removes ~36% of the EHR-observed sample.\n")
+
+## 8. Cronbach alpha on ALL cohesion respondents (the manuscript's 0.88 may be this sample) -----------
+hdr("8. Cronbach alpha, all respondents vs at-risk cohort")
+sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer FROM `%s.ds_survey` WHERE question_concept_id IN (40192463,40192411,40192499,40192417,40192400)", cdr))
+sv <- sv[!duplicated(sv[c("person_id","question_concept_id")]), ]
+m5 <- c("Strongly disagree"=1,"Disagree"=2,"Neutral (neither agree nor disagree)"=3,"Agree"=4,"Strongly agree"=5)
+m4 <- c("Strongly disagree"=1,"Disagree"=2,"Agree"=3,"Strongly agree"=4)
+sv$v <- ifelse(sv$question_concept_id == "40192400", m4[sv$answer], m5[sv$answer])
+W <- reshape(sv[c("person_id","question_concept_id","v")], idvar="person_id", timevar="question_concept_id", direction="wide")
+Xa <- as.matrix(W[, -1]); 
+alpha_of <- function(X){ X <- scale(X); k <- ncol(X); k/(k-1) * (1 - sum(apply(X,2,var)) / var(rowSums(X))) }
+cc5 <- complete.cases(Xa)
+cat(sprintf("all respondents with all 5 items: n=%s, alpha=%.3f (standardised items)\n", mask(sum(cc5)), alpha_of(Xa[cc5, ])))
+Xr <- Xa; Xr[] <- apply(Xa, 2, function(x) x)  # raw-scale alpha
+k <- ncol(Xr); a_raw <- k/(k-1) * (1 - sum(apply(Xr[cc5,],2,var)) / var(rowSums(Xr[cc5,])))
+cat(sprintf("all respondents, raw item scale: alpha=%.3f\n", a_raw))
+Xc <- as.matrix(d[, items]); ccc <- complete.cases(Xc)
+cat(sprintf("at-risk cohort with all 5 items: n=%s, alpha=%.3f standardised, %.3f raw\n", mask(sum(ccc)), alpha_of(Xc[ccc, ]),
+            k/(k-1) * (1 - sum(apply(Xc[ccc,],2,var)) / var(rowSums(Xc[ccc,])))))
