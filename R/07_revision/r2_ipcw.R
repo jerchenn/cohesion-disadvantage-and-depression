@@ -1,7 +1,7 @@
 # r2_ipcw.R -- Reviewer 2, third point: informative censoring. Follow-up ends at the last EHR record, which
 # may depend on cohesion, income or deprivation. Inverse probability of censoring weights:
 #  - "lost" = no event and follow-up ended more than 180 days before the end of the data (administrative end)
-#  - censoring model: Cox for time to loss with the primary covariates (+ deprivation)
+#  - censoring model: Cox for time to loss with the primary covariates (deprivation -> loss is a separate descriptive model)
 #  - stabilised weight = S0(t_i) / S(t_i | X_i), evaluated at each person's own end of follow-up, truncated at the 99th pct
 #  - primary refitted with the weights and robust SE
 # Primary specification unchanged. Aggregate output only. Needs: survival.
