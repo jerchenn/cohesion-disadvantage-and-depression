@@ -2,6 +2,7 @@
 # unmeasured confounder (e.g. residential self-selection) would have to be, on the
 # risk-ratio scale, to explain away each association. ~5.5% incidence -> rare=TRUE ok.
 # install.packages("EValue") if needed
+# Inputs are the HRs printed by the scripts named on each line; update them if the cohort is rebuilt.
 library(EValue)
 show <- function(lab, est, lo, hi){
   e <- evalues.HR(est, lo, hi, rare = TRUE)
@@ -11,7 +12,7 @@ show <- function(lab, est, lo, hi){
               lab, est, lo, hi, e["E-values","point"], ci))
 }
 cat("=== E-values (point estimate | CI limit nearest null) ===\n")
-show("Primary: cohesion->dep",        0.882, 0.857, 0.908)  # main cohort
+show("Primary: cohesion->dep",        0.884, 0.859, 0.909)  # main cohort, Table 2 primary on the rebuilt cohort (sanity_checks.R section 5)
 show("Steps->incident depression",    0.753, 0.702, 0.807)  # device behaviour
 show("Wellbeing(happy)->depression",  0.611, 0.581, 0.642)  # self-report affect
-show("Cohesion->dep (SWB cohort)",    0.861, 0.813, 0.912)
+show("Cohesion->dep (SWB cohort)",    0.867, 0.817, 0.920)  # r2_reri_subsamples_vif.R (b), rebuilt cohort
