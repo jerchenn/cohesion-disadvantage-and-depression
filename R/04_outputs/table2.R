@@ -26,6 +26,6 @@ t2 <- rbind(
   line(mA, "Antidepressant initiation (parallel outcome)"))
 write.csv(t2, "table2.csv", row.names=FALSE)
 cat("=== TABLE 2 (primary + sensitivity analyses) ===\n"); print(t2, row.names=FALSE)
-cat("\nE-value (primary): 1.52 (lower 95% CI limit, 1.44)   [evalue.R]\n")
+cat("\nE-value (primary): 1.52 (lower 95% CI limit, 1.43)   [evalue.R, rebuilt-cohort inputs]\n")
 cat("Footnote: HR per 1-SD cohesion. Reweighted row uses the parsimonious specification;",
     "\nprimary and lag period use the fully adjusted specification.\n")
