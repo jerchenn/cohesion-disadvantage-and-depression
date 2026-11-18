@@ -9,7 +9,7 @@ RHS_NOCOH <- sub("z_cohesion \\+ ", "", RHS)
 fit <- function(rhs, d, ...) coxph(as.formula(sprintf("Surv(time_days,event) ~ %s", rhs)), d, ...)
 hr <- function(m, term = "z_cohesion", lab = ""){
   b <- coef(m)[[term]]; se <- sqrt(vcov(m)[term, term])
-  cat(sprintf("%-62s HR %.3f (%.3f-%.3f)  P=%.2g  n=%s ev=%s\n", lab, exp(b), exp(b - 1.96*se), exp(b + 1.96*se),
+  cat(sprintf("%-62s HR %.4f (%.4f-%.4f)  P=%.2g  n=%s ev=%s\n", lab, exp(b), exp(b - 1.96*se), exp(b + 1.96*se),
               2*pnorm(-abs(b/se)), mask(m$n), mask(m$nevent)))
   invisible(c(b = b, se = se))
 }

@@ -68,4 +68,4 @@ out[["c7"]] <- row("concordance","Device: sleep WASO",       cx("z_waso",fb),"z_
 est <- do.call(rbind, out)
 names(est)[names(est)=="extra"] <- "interaction_p"
 write.csv(est, "fig_estimates.csv", row.names=FALSE)
-cat("\nWrote fig_estimates.csv\n"); print(est, row.names=FALSE, digits=3)
+cat("\nWrote fig_estimates.csv\n"); print(est, row.names=FALSE, digits=4)
