@@ -51,6 +51,7 @@ B  <- cbind(hr_curve(mi, zB), disadvantage=100-pgrid, panel="B  Household income
 
 out <- rbind(A, B)
 write.csv(out, "fig_gradient_data.csv", row.names=FALSE)
+cat("\n--- plotted data (aggregate, model-based) ---\n"); print(out, row.names=FALSE, digits=4)
 
 p <- ggplot(out, aes(disadvantage, hr)) +
   geom_hline(yintercept=1, linetype=2, colour="grey55") +

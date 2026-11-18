@@ -33,6 +33,7 @@ lp   <- as.vector(D %*% b)
 se   <- sqrt(rowSums((D %*% V) * D))
 out  <- data.frame(z_cohesion=zg, hr=exp(lp), lo=exp(lp-1.96*se), hi=exp(lp+1.96*se))
 write.csv(out, "fig_doseresponse_data.csv", row.names=FALSE)
+cat("\n--- plotted data (aggregate, model-based) ---\n"); print(out, row.names=FALSE, digits=4)
 
 p <- ggplot(out, aes(z_cohesion, hr)) +
   geom_hline(yintercept=1, linetype=2, colour="grey55") +
