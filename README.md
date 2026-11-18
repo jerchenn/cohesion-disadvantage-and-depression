@@ -34,47 +34,42 @@ The scripts read the workspace's BigQuery dataset via the environment variables
 Only **aggregate** results (hazard ratios, coefficients, counts ≥ 20) leave the environment,
 per the All of Us Data and Statistics Dissemination Policy.
 
-## Requirements
+## Replication from a fresh notebook
 
-R (≥ 4.0) with:
+Open a new R notebook in an All of Us Controlled Tier workspace and run one cell:
 
 ```r
-install.packages(c("tidyverse", "bigrquery", "survival", "sandwich", "lmtest", "EValue", "splines", "ggplot2"))
+if (!dir.exists("~/cohesion-disadvantage-and-depression"))
+  system("git clone https://github.com/jerchenn/cohesion-disadvantage-and-depression.git ~/cohesion-disadvantage-and-depression")
+setwd("~/cohesion-disadvantage-and-depression"); system("git pull")
+source("R/run_all.R")
 ```
 
-`splines` and `ggplot2` ship with R / tidyverse. `bigrquery` authenticates automatically inside the Workbench.
+`R/run_all.R` installs any missing packages (survival, bigrquery, tidyverse, sandwich, lmtest, gridExtra, EValue),
+rebuilds every analysis dataset from BigQuery, and runs every model, table, and figure in dependency order. Each
+script runs in its own environment; a script that fails is logged and the run continues, and the failures are
+listed at the end. To resume, set `START_AT <- "<path of the failed script>"` and source `R/run_all.R` again.
+All printed output is aggregate (counts under 20 masked) and is copied to `replication_log.txt`. The full run
+takes several hours.
 
 ## Repository structure
 
 ```
 R/
-  00_discovery/   Concept-ID and feasibility discovery (run first, informational)
-  01_build/       Construct analysis datasets (BigQuery -> .rds)
-  02_models/      Primary and multimodal models
-  03_robustness/  Sensitivity analyses
-  04_outputs/     Tables and figures
+  run_all.R       Replication script (the only entry point needed)
+  00_discovery/   Concept discovery and cohort checks (verify_recodes.R and sanity_checks.R run in run_all.R)
+  01_build/       Analysis datasets (BigQuery -> .rds): build_cox3.R is the primary cohort
+  02_models/      Primary and subcohort models
+  03_robustness/  Sensitivity analyses in the original submission
+  04_outputs/     Tables and figures (fig_forest.R draws Figures 2 and 3)
+  07_revision/    Sensitivity analyses added at revision (see R/07_revision/README.md)
 docs/
   TECHNICAL_DOCUMENTATION.md   Step-by-step explanation of every script
   DATA_DICTIONARY.md           Concept IDs, variables, and derived measures
 ```
 
-## Pipeline (run order)
-
-Datasets are cached as `.rds` files in the working directory; models read them. Run in this order:
-
-| Step | Script | Produces | Needs |
-|---|---|---|---|
-| 1 | `01_build/build_cox.R` | `cox_dat.rds` (main at-risk cohort) | — |
-| 2 | `01_build/build_cox_swb.R` | `swb_dat.rds` (self-report subcohort) | — |
-| 3 | `01_build/build_wb_items.R` | `wb_item_dat.rds` (item-level affect) | — |
-| 4 | `01_build/build_fitbit.R` | `fitbit_dat.rds` (wearable) | `cox_dat.rds` |
-| 5 | `01_build/build_antidep.R` | `antidep_dat.rds` (parallel outcome) | `cox_dat.rds` |
-| 6 | `02_models/*` | printed results | the relevant `.rds` |
-| 7 | `03_robustness/*` | printed results | the relevant `.rds` |
-| 8 | `04_outputs/figs_data.R` -> `figs_plot.R` | `fig_estimates.csv`, figures | `.rds` files |
-| 9 | `04_outputs/table1.R`, `table2.R` | `table1.csv`, `table2.csv` | `.rds` files |
-
-See `docs/TECHNICAL_DOCUMENTATION.md` for exactly what each script does, its inputs/outputs, and the methods it implements.
+Scripts in 00_discovery other than the two checks, 05_recognition, 06_*, and the older build_cox.R and cox_model.R are
+exploratory or superseded and are not used by any reported result.
 
 ## Key result
 

@@ -7,7 +7,7 @@
 # education) so every model converges cleanly (no sparse addNA factor cells -> no separation). Re-anchored
 # cohort (cox_dat2.rds) so adversity measures precede follow-up. Aggregate only; writes etable_robustness.csv.
 #
-# INPUT: cox_dat.rds + cox_dat2.rds + ds_survey + ds_zip_code_socioeconomic.  Needs: bigrquery, survival.
+# INPUT: cox_dat3.rds + cox_dat2.rds + ds_survey + ds_zip_code_socioeconomic.  Needs: bigrquery, survival.
 
 library(bigrquery); library(survival)
 cdr <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")
@@ -81,7 +81,7 @@ for (pn in unique(ET$panel)){ cat(sprintf("\n-- %s --\n", pn)); s <- ET[ET$panel
 
 ## footnote: main-text primary (full cohort, factor spec) + interaction
 ref <- coxph(Surv(time_days,event) ~ z_cohesion + age + sex + race + ethnicity +
-               income_f + educ_f + emp_f + log_util, readRDS("cox_dat.rds"))
+               income_f + educ_f + emp_f + log_util, readRDS("cox_dat3.rds"))
 rb <- summary(ref)$coefficients["z_cohesion",]; rc2 <- exp(confint(ref)["z_cohesion",])
 d$dep_z <- z(d$deprivation_index)
 mi <- coxph(Surv(time_days,event) ~ z_cohesion*dep_z + age + sex_c + race_c + ethn_c +

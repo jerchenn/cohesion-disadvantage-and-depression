@@ -2,7 +2,9 @@
 # from aggregate estimate files only (runs off the Workbench). One panel, so text and bars align.
 # Usage: Rscript R/04_outputs/fig_forest.R <fig_estimates.csv> <out_dir> [fig_items_data.csv]
 suppressPackageStartupMessages(library(ggplot2))
-args <- commandArgs(TRUE); est <- read.csv(args[1], check.names = FALSE); out <- args[2]
+args <- commandArgs(TRUE)
+if (length(args) < 2) args <- c("fig_estimates.csv", "figures", "fig_items_data.csv")   # sourced from run_all.R
+est <- read.csv(args[1], check.names = FALSE); out <- args[2]; dir.create(out, showWarnings = FALSE)
 
 forest <- function(rows, file, xlab, breaks, lim, w = 7.2, cols = c("No.", "Events"), title = NULL, save = TRUE, mhead = "Measure", cihead = "HR (95% CI)"){
   rows$y <- rev(seq_len(nrow(rows))); top <- max(rows$y) + 1
@@ -60,9 +62,9 @@ forest(grouped(con, "g"), "Figure3_forest", "HR per 1-SD higher (healthier) leve
 cat("Wrote Figure3_forest.{pdf,eps,png}\n")
 
 ## Figure 2: item-level associations (A) and their interaction with disadvantage (B)
-if (length(args) >= 3) {
+if (length(args) >= 3 && file.exists(args[3])) {
   suppressPackageStartupMessages(library(gridExtra))
-  it <- read.csv(args[3]); it$n <- NA; it$events <- NA
+  it <- read.csv(args[3]); it$panel <- substr(trimws(it$panel), 1, 1); it$n <- NA; it$events <- NA   # "A  Association ..." -> "A"
   ord <- c("Willing to help", "Can be trusted", "Get along", "Share values", "Watch out for each other")
   lab <- c("Marginal" = "Item alone", "Joint (independent)" = "All 5 items jointly",
            "x area deprivation" = "Item x area deprivation", "x lower income" = "Item x lower income")
