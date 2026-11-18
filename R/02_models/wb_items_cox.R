@@ -35,7 +35,7 @@ for (nm in wb_names){
                HR_wash=w["hr"], lo_w=w["lo"], hi_w=w["hi"]))
 }
 res <- res[order(factor(res$tier, levels=c("wellbeing","social","gad","phq")), res$HR), ]
-fmt <- function(h,l,u) sprintf("%.3f (%.3f-%.3f)", h,l,u)
+fmt <- function(h,l,u) sprintf("%.4f (%.4f-%.4f)", h,l,u)
 out <- data.frame(item=res$item, tier=res$tier,
                   HR_per_SD=fmt(res$HR,res$lo,res$hi),
                   HR_180d_lag=fmt(res$HR_wash,res$lo_w,res$hi_w),
