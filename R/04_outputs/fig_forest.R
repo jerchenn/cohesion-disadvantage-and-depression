@@ -54,7 +54,6 @@ nice <- c("Cohesion (exposure)" = "Neighborhood social cohesion", "Self-report: 
           "Self-report: meaning" = "Meaning in life", "Self-report: social connection" = "Social connection",
           "Device: steps" = "Daily steps", "Device: MVPA" = "Moderate to vigorous activity",
           "Device: sleep efficiency" = "Sleep efficiency", "Device: sleep WASO" = "Wake after sleep onset")
-con[con$label == "Cohesion (exposure)", c("hr","lo","hi")] <- c(0.8748, 0.8503, 0.9001)  # figs_data.R RECONCILE line; the CSV rounds to 3 dp
 con$g <- grp[con$label]; con$label <- nice[con$label]
 forest(grouped(con, "g"), "Figure3_forest", "HR per 1-SD higher (healthier) level (log scale)",
        c(0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1), c(0.5, 1.12))
