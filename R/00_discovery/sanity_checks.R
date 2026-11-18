@@ -145,7 +145,7 @@ sv <- sv[order(sv$person_id, sv$qid, sv$survey_datetime), ]
 sv <- sv[!duplicated(sv[c("person_id","qid")]), ]
 labs8 <- c("40192463"="help","40192411"="getalong","40192499"="trust","40192417"="values","40192400"="watchout")
 sv$item <- unname(labs8[sv$qid])
-cat("answer strings seen (counts):\n"); print(head(sort(table(sv$answer), decreasing=TRUE), 12))
+tb <- sort(table(sv$answer), decreasing=TRUE); cat("answer strings seen (counts, <20 masked):\n"); print(data.frame(answer=names(tb), n=mask(as.numeric(tb)), row.names=NULL))
 m5 <- c("Strongly disagree"=1,"Disagree"=2,"Neutral (neither agree nor disagree)"=3,"Agree"=4,"Strongly agree"=5)
 m4 <- c("Strongly disagree"=1,"Disagree"=2,"Agree"=3,"Strongly agree"=4)
 sv$v <- ifelse(sv$item == "watchout", unname(m4[sv$answer]), unname(m5[sv$answer]))
