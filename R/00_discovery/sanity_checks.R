@@ -138,19 +138,24 @@ cat("The washout excludes anyone with ANY of these codes before baseline; that s
 
 ## 8. Cronbach alpha on ALL cohesion respondents (the manuscript's 0.88 may be this sample) -----------
 hdr("8. Cronbach alpha, all respondents vs at-risk cohort")
-sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer FROM `%s.ds_survey` WHERE question_concept_id IN (40192463,40192411,40192499,40192417,40192400)", cdr))
-sv <- sv[!duplicated(sv[c("person_id","question_concept_id")]), ]
+tryCatch({
+sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer, survey_datetime FROM `%s.ds_survey` WHERE question_concept_id IN (40192463,40192411,40192499,40192417,40192400)", cdr))
+sv$qid <- as.character(sv$question_concept_id); sv$answer <- as.character(sv$answer)
+sv <- sv[order(sv$person_id, sv$qid, sv$survey_datetime), ]
+sv <- sv[!duplicated(sv[c("person_id","qid")]), ]
+labs8 <- c("40192463"="help","40192411"="getalong","40192499"="trust","40192417"="values","40192400"="watchout")
+sv$item <- unname(labs8[sv$qid])
+cat("answer strings seen (counts):\n"); print(head(sort(table(sv$answer), decreasing=TRUE), 12))
 m5 <- c("Strongly disagree"=1,"Disagree"=2,"Neutral (neither agree nor disagree)"=3,"Agree"=4,"Strongly agree"=5)
 m4 <- c("Strongly disagree"=1,"Disagree"=2,"Agree"=3,"Strongly agree"=4)
-sv$v <- ifelse(sv$question_concept_id == "40192400", m4[sv$answer], m5[sv$answer])
-W <- reshape(sv[c("person_id","question_concept_id","v")], idvar="person_id", timevar="question_concept_id", direction="wide")
-Xa <- as.matrix(W[, -1]); 
+sv$v <- ifelse(sv$item == "watchout", unname(m4[sv$answer]), unname(m5[sv$answer]))
+W <- tidyr::pivot_wider(sv[!is.na(sv$item), c("person_id","item","v")], names_from=item, values_from=v)
+Xa <- as.matrix(W[, items])
 alpha_of <- function(X){ X <- scale(X); k <- ncol(X); k/(k-1) * (1 - sum(apply(X,2,var)) / var(rowSums(X))) }
+alpha_raw <- function(X){ k <- ncol(X); k/(k-1) * (1 - sum(apply(X,2,var)) / var(rowSums(X))) }
 cc5 <- complete.cases(Xa)
-cat(sprintf("all respondents with all 5 items: n=%s, alpha=%.3f (standardised items)\n", mask(sum(cc5)), alpha_of(Xa[cc5, ])))
-Xr <- Xa; Xr[] <- apply(Xa, 2, function(x) x)  # raw-scale alpha
-k <- ncol(Xr); a_raw <- k/(k-1) * (1 - sum(apply(Xr[cc5,],2,var)) / var(rowSums(Xr[cc5,])))
-cat(sprintf("all respondents, raw item scale: alpha=%.3f\n", a_raw))
+cat(sprintf("all respondents with all 5 items: n=%s, alpha=%.3f standardised, %.3f raw\n", mask(sum(cc5)),
+            if (sum(cc5) > 1) alpha_of(Xa[cc5, , drop=FALSE]) else NA, if (sum(cc5) > 1) alpha_raw(Xa[cc5, , drop=FALSE]) else NA))
 Xc <- as.matrix(d[, items]); ccc <- complete.cases(Xc)
-cat(sprintf("at-risk cohort with all 5 items: n=%s, alpha=%.3f standardised, %.3f raw\n", mask(sum(ccc)), alpha_of(Xc[ccc, ]),
-            k/(k-1) * (1 - sum(apply(Xc[ccc,],2,var)) / var(rowSums(Xc[ccc,])))))
+cat(sprintf("at-risk cohort with all 5 items: n=%s, alpha=%.3f standardised, %.3f raw\n", mask(sum(ccc)), alpha_of(Xc[ccc, ]), alpha_raw(Xc[ccc, ])))
+}, error=function(e) cat("section 8 failed:", conditionMessage(e), "\n"))
