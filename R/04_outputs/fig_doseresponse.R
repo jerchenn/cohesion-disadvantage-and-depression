@@ -23,6 +23,9 @@ d <- collapse(readRDS("cox_dat3.rds")); d <- d[!is.na(d$z_cohesion), ]
 bas <- ns(d$z_cohesion, df=3)
 fit <- coxph(Surv(time_days,event) ~ bas + age + sex_c + race_c + ethn_c +
                income_m + educ_m + log_util, d)
+lin <- coxph(Surv(time_days,event) ~ z_cohesion + age + sex_c + race_c + ethn_c + income_m + educ_m + log_util, d)
+lr <- 2 * (fit$loglik[2] - lin$loglik[2])           # natural spline (3 df) vs linear: 2 df likelihood-ratio test
+cat(sprintf("Nonlinearity (spline vs linear) LRT: chi-square %.2f, df 2, P = %.3f\n", lr, pchisq(lr, 2, lower.tail = FALSE)))
 sp <- grep("^bas", names(coef(fit)))          # spline coefficient positions
 b  <- coef(fit)[sp]; V <- vcov(fit)[sp, sp]
 
