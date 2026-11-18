@@ -15,10 +15,14 @@ hr <- function(m, term = "z_cohesion", lab = ""){
 }
 hdr <- function(s) cat("\n==========", s, "==========\n")
 ## BigQuery, only for the scripts that need it
-bq <- function(){
+## assigns cdr, bq_proj and run_sql in the calling script's environment (not via <<-, which can hit
+## a locked binding of the same name exported by an attached package)
+bq <- function(env = parent.frame()){
   suppressPackageStartupMessages(library(bigrquery))
-  cdr <<- Sys.getenv("WORKSPACE_CDR"); proj <<- Sys.getenv("GOOGLE_PROJECT")
-  run_sql <<- function(q) bq_table_download(bq_project_query(proj, q), bigint = "character")
+  p <- Sys.getenv("GOOGLE_PROJECT")
+  assign("cdr", Sys.getenv("WORKSPACE_CDR"), envir = env)
+  assign("bq_proj", p, envir = env)
+  assign("run_sql", function(q) bq_table_download(bq_project_query(p, q), bigint = "character"), envir = env)
 }
 ## all standard SNOMED Condition descendants of the named parent concepts (same construction as the outcome set)
 desc_sql <- function(parent_names) sprintf(
