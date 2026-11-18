@@ -45,7 +45,7 @@ grp <- function(g, lab){
   out <- do.call(rbind, lapply(split(seq_len(nrow(d)), d[[g]]), function(i) data.frame(
     n = mask(length(i)), cond_per_y_median = sprintf("%.1f", median(d$cond_rate[i])), cond_per_y_mean = sprintf("%.1f", mean(d$cond_rate[i])),
     visits_per_y_median = sprintf("%.1f", median(d$visit_rate[i])), visits_per_y_mean = sprintf("%.1f", mean(d$visit_rate[i])),
-    any_cond_y1_pct = sprintf("%.1f", 100*mean(d$cond_y1[i & y1] > 0)), any_visit_y1_pct = sprintf("%.1f", 100*mean(d$visit_y1[i & y1] > 0)))))
+    any_cond_y1_pct = sprintf("%.1f", 100*mean(d$cond_y1[i[y1[i]]] > 0)), any_visit_y1_pct = sprintf("%.1f", 100*mean(d$visit_y1[i[y1[i]]] > 0)))))
   print(out)
 }
 grp("coh_t", "cohesion tertile"); grp("inc_g", "income group"); grp("dep_t", "area deprivation tertile")
