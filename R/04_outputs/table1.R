@@ -59,6 +59,10 @@ cat("=== TABLE 1 (by cohesion tertile) ===\n"); print(t1, row.names=FALSE)
 fb  <- readRDS("fitbit_dat.rds"); fb <- fb[!is.na(fb$steps) & !is.na(fb$event),]
 fb$n_cond <- util$n_cond[match(fb$person_id, util$person_id)]
 wb  <- readRDS("wb_item_dat.rds"); wb <- wb[!is.na(wb$event),]
+# R1: restrict the subcohort columns to members of the at-risk cohort (38 951 affect respondents, not 43 444),
+# so eTable 1 describes the participants analysed within each subcohort
+wb <- wb[as.character(wb$person_id) %in% as.character(cox$person_id),]
+fb <- fb[as.character(fb$person_id) %in% as.character(cox$person_id),]
 wb$n_cond <- util$n_cond[match(wb$person_id, util$person_id)]
 e1 <- data.frame(Characteristic=names(summ(cox)),
                  `Main cohort`   = summ(cox),
