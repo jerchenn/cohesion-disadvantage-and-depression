@@ -11,7 +11,7 @@ d <- readRDS("cox_dat3.rds")
 rhs <- "z_cohesion + age + sex + race + ethnicity + income_f + educ_f + emp_f + log_util"
 hr <- function(m, lab){ b<-summary(m)$coefficients["z_cohesion",]
   ci<-suppressMessages(exp(confint(m)["z_cohesion",]))
-  cat(sprintf("%-38s HR %.3f (%.3f-%.3f)  n=%d ev=%d\n", lab, exp(b[["coef"]]), ci[1], ci[2], m$n, m$nevent)) }
+  cat(sprintf("%-38s HR %.4f (%.4f-%.4f)  n=%d ev=%d\n", lab, exp(b[["coef"]]), ci[1], ci[2], m$n, m$nevent)) }
 
 cat("=== Corrected primary (pre-baseline utilization) ===\n")
 m <- coxph(as.formula(sprintf("Surv(time_days,event) ~ %s", rhs)), d); hr(m, "primary, pre-baseline log_util")
@@ -22,7 +22,7 @@ cat("\n=== ZIP3 cluster-robust variance ===\n")
 dc <- d[!is.na(d$zip3_as_string), ]; dc$clus <- factor(dc$zip3_as_string)
 mr <- coxph(as.formula(sprintf("Surv(time_days,event) ~ %s + cluster(clus)", rhs)), dc)
 b <- summary(mr)$coefficients["z_cohesion",]
-cat(sprintf("%-38s HR %.3f (%.3f-%.3f)  robust SE; %d ZIP3 clusters\n", "primary, cluster-robust",
+cat(sprintf("%-38s HR %.4f (%.4f-%.4f)  robust SE; %d ZIP3 clusters\n", "primary, cluster-robust",
     exp(b[["coef"]]), exp(b[["coef"]]-1.96*b[["robust se"]]), exp(b[["coef"]]+1.96*b[["robust se"]]),
     nlevels(dc$clus)))
 
