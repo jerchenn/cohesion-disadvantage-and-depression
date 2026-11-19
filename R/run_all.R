@@ -71,9 +71,14 @@ steps <- c(
   "R/04_outputs/fig_gradient.R"         # eFigure 3
 )
 
-if (exists("START_AT") && START_AT %in% steps) steps <- steps[match(START_AT, steps):length(steps)]
+resume <- exists("START_AT", envir = globalenv())
+if (resume) {
+  start <- get("START_AT", envir = globalenv()); rm("START_AT", envir = globalenv())   # used once, so a later full run starts from the beginning
+  if (!file.exists("cox_dat3.rds")) stop("START_AT was set but this folder has no cox_dat3.rds; run the full script without START_AT")
+  if (start %in% steps) steps <- steps[match(start, steps):length(steps)]
+}
 failed <- character(0)
-logcon <- file("replication_log.txt", open = if (exists("START_AT")) "a" else "w")
+logcon <- file("replication_log.txt", open = if (resume) "a" else "w")
 sink(logcon, split = TRUE)
 cat("Replication run started", format(Sys.time()), "|", R.version.string, "| CDR", Sys.getenv("WORKSPACE_CDR"), "\n")
 for (f in steps) {
