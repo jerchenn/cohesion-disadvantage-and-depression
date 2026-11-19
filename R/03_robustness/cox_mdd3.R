@@ -32,4 +32,4 @@ m <- coxph(as.formula(sprintf("Surv(time_days,event) ~ %s", rhs)), d)
 b <- summary(m)$coefficients["z_cohesion",]; ci <- exp(confint(m)["z_cohesion",])
 cat(sprintf("MDD-only outcome: HR %.3f (%.3f-%.3f)  n=%d  events=%d\n",
             exp(b[["coef"]]), ci[1], ci[2], m$n, m$nevent))
-cat("Compare broad-phenotype primary: HR 0.883 (0.858-0.909).\n")
+cat("Compare with the broad-phenotype primary HR in cox_model3.R (same cohort file).\n")
