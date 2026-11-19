@@ -115,7 +115,8 @@ hdr("7. Depression concept set: codes that produce the incident events (Reviewer
 library(bigrquery)
 cdr <- Sys.getenv("WORKSPACE_CDR"); proj <- Sys.getenv("GOOGLE_PROJECT")
 run_sql <- function(q) bq_table_download(bq_project_query(proj, q), bigint = "character")
-dep_ids <- sprintf("SELECT a.descendant_concept_id FROM `%s.concept` p JOIN `%s.concept_ancestor` a ON a.ancestor_concept_id=p.concept_id JOIN `%s.concept` c ON c.concept_id=a.descendant_concept_id WHERE p.vocabulary_id='SNOMED' AND p.standard_concept='S' AND p.concept_name IN ('Depressive disorder','Major depressive disorder','Recurrent depressive disorder','Dysthymia') AND c.standard_concept='S'", cdr, cdr, cdr)
+dep_ids <- sprintf("SELECT a.descendant_concept_id FROM `%s.concept` p JOIN `%s.concept_ancestor` a ON a.ancestor_concept_id=p.concept_id JOIN `%s.concept` c ON c.concept_id=a.descendant_concept_id WHERE p.vocabulary_id='SNOMED' AND p.standard_concept='S' AND p.concept_name IN ('Depressive disorder','Major depressive disorder','Recurrent depressive disorder','Dysthymia') AND c.standard_concept='S' AND c.domain_id='Condition' AND LOWER(c.concept_name) NOT LIKE '%%bipolar%%'", cdr, cdr, cdr)   # identical to the outcome set in build_cox3.R
+cat("concepts in the outcome set:", nrow(run_sql(sprintf("SELECT DISTINCT descendant_concept_id FROM (%s)", dep_ids))), "\n")
 fc <- run_sql(sprintf("
 WITH dep AS (SELECT person_id, condition_start_date, condition_concept_id FROM `%s.condition_occurrence` WHERE condition_concept_id IN (%s)),
      first AS (SELECT person_id, MIN(condition_start_date) AS first_dep FROM dep GROUP BY person_id)
