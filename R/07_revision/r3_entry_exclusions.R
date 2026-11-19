@@ -23,7 +23,7 @@ geo$person_id <- as.character(geo$person_id); geo <- geo[!duplicated(geo$person_
 ## covariates for the excluded group come from the same survey and person tables, recoded as in build_cox3.R
 sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer, survey_datetime FROM `%s.ds_survey` WHERE question_concept_id IN (40192463,40192411,40192499,40192417,40192400,1585375)", cdr))
 sv$person_id <- as.character(sv$person_id); sv <- sv[sv$person_id %in% excl$person_id, ]
-sv <- sv[order(sv$person_id, sv$question_concept_id, sv$survey_datetime), ]; sv <- sv[!duplicated(sv[c("person_id", "question_concept_id")]), ]
+sv <- sv[order(sv$person_id, sv$question_concept_id, sv$survey_datetime, sv$answer), ]; sv <- sv[!duplicated(sv[c("person_id", "question_concept_id")]), ]
 w <- tidyr::pivot_wider(sv[c("person_id", "question_concept_id", "answer")], names_from = question_concept_id, values_from = answer)
 na_vals <- c("Don't know/Not sure","PMI: Skip","PMI: Prefer Not To Answer","PMI: Dont Know","Skip","Don't know","Prefer not to answer","Response removed due to invalid value")
 num <- function(x, m) { x <- as.character(x); x[x %in% na_vals] <- NA; as.numeric(m[x]) }

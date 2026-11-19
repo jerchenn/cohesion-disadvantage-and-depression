@@ -25,8 +25,9 @@ ace_ids  <- c(1332946,1332947,1332948,1332950,1333208,1332857,1333210,1333212,13
 trauma_ids<-c(1703988,1704021,1703976,1704055,1704035,1703994,1704056,1704011,1704029,1704020,1703989)
 
 allids <- unique(c(disc_ids, food_ids, disab_ids, ace_ids, trauma_ids))
-sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer FROM `%s.ds_survey`
+sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer, survey_datetime FROM `%s.ds_survey`
                        WHERE question_concept_id IN (%s)", cdr, paste(allids, collapse=",")))
+sv <- sv[order(sv$person_id, sv$question_concept_id, sv$survey_datetime, sv$answer), ]   # deterministic: earliest answer, ties broken by answer text (multi-select items)
 sv <- sv[!duplicated(sv[c("person_id","question_concept_id")]), ]
 sv$qid <- as.numeric(sv$question_concept_id)
 W <- tidyr::pivot_wider(sv[,c("person_id","qid","answer")], names_from=qid, values_from=answer)

@@ -27,8 +27,9 @@ tier <- c(happy="wellbeing", meaning="wellbeing", cutoff="social",
           nervous="gad", worrystop="gad", worrymuch="gad", relax="gad", afraid="gad", irritable="gad")
 
 all_ids <- c(env_ids, wb_ids, ses_ids)
-sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer FROM `%s.ds_survey` WHERE question_concept_id IN (%s)",
+sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer, survey_datetime FROM `%s.ds_survey` WHERE question_concept_id IN (%s)",
                       cdr, paste(all_ids, collapse=",")))
+sv <- sv[order(sv$person_id, sv$question_concept_id, sv$survey_datetime, sv$answer), ]   # deterministic: earliest answer, ties broken by answer text (multi-select items)
 sv <- sv[!duplicated(sv[c("person_id","question_concept_id")]), ]
 sv$item <- names(all_ids)[match(as.numeric(sv$question_concept_id), all_ids)]
 wide <- tidyr::pivot_wider(sv[!is.na(sv$item), c("person_id","item","answer")],

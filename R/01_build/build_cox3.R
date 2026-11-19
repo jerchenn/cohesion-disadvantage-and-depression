@@ -18,7 +18,7 @@ run_sql <- function(q) bq_table_download(bq_project_query(proj, q), bigint = "ch
 item_ids <- c(40192463,40192411,40192499,40192417,40192400, 1585375,1585940,1585952)
 sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer, survey_datetime FROM `%s.ds_survey` WHERE question_concept_id IN (%s)",
                       cdr, paste(item_ids, collapse=",")))
-sv <- sv[order(sv$person_id, sv$question_concept_id, sv$survey_datetime), ]
+sv <- sv[order(sv$person_id, sv$question_concept_id, sv$survey_datetime, sv$answer), ]   # deterministic: employment is multi-select, so same-time answers are tied; break ties by answer text
 sv <- sv[!duplicated(sv[c("person_id","question_concept_id")]), ]
 labs <- c("40192463"="help","40192411"="getalong","40192499"="trust","40192417"="values",
           "40192400"="watchout","1585375"="income","1585940"="education","1585952"="employment")

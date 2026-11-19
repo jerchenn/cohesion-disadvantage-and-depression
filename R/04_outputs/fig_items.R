@@ -17,8 +17,9 @@ lab <- c(help="Willing to help", getalong="Get along", trust="Can be trusted",
          values="Share values", watchout="Watch out for each other")
 
 ## pull + recode + z-score the 5 items
-sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer FROM `%s.ds_survey`
+sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer, survey_datetime FROM `%s.ds_survey`
                        WHERE question_concept_id IN (%s)", cdr, paste(ids, collapse=",")))
+sv <- sv[order(sv$person_id, sv$question_concept_id, sv$survey_datetime, sv$answer), ]   # deterministic: earliest answer, ties broken by answer text (multi-select items)
 sv <- sv[!duplicated(sv[c("person_id","question_concept_id")]), ]
 sv$item <- names(ids)[match(as.numeric(sv$question_concept_id), ids)]
 wide <- tidyr::pivot_wider(sv[,c("person_id","item","answer")], names_from=item, values_from=answer)

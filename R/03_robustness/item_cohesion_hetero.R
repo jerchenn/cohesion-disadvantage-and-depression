@@ -14,8 +14,9 @@ cox <- readRDS("cox_dat.rds")
 
 ## 1. pull the 5 cohesion items, recode (scale-aware), z-score each
 ids <- c(help=40192463, getalong=40192411, trust=40192499, values=40192417, watchout=40192400)
-sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer FROM `%s.ds_survey`
+sv <- run_sql(sprintf("SELECT person_id, question_concept_id, answer, survey_datetime FROM `%s.ds_survey`
                        WHERE question_concept_id IN (%s)", cdr, paste(ids, collapse=",")))
+sv <- sv[order(sv$person_id, sv$question_concept_id, sv$survey_datetime, sv$answer), ]   # deterministic: earliest answer, ties broken by answer text (multi-select items)
 sv <- sv[!duplicated(sv[c("person_id","question_concept_id")]), ]
 sv$item <- names(ids)[match(as.numeric(sv$question_concept_id), ids)]
 wide <- tidyr::pivot_wider(sv[,c("person_id","item","answer")], names_from=item, values_from=answer)
