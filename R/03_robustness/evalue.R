@@ -2,17 +2,18 @@
 # unmeasured confounder (e.g. residential self-selection) would have to be, on the
 # risk-ratio scale, to explain away each association. ~5.5% incidence -> rare=TRUE ok.
 # install.packages("EValue") if needed
-# Inputs are the HRs printed by the scripts named on each line; update them if the cohort is rebuilt.
-library(EValue)
+# The primary HR is computed here from the cohort file, so the E-value follows the data. E-values for the
+# Figure 3 measures (steps, happiness) are computed in the supplement from the logged Figure 3 estimates.
+library(EValue); library(survival)
 show <- function(lab, est, lo, hi){
   e <- evalues.HR(est, lo, hi, rare = TRUE)
   ci <- e["E-values", c("lower","upper")]
   ci <- ci[!is.na(ci)][1]                     # for protective HR the CI E-value is the non-NA bound
-  cat(sprintf("%-28s HR %.3f (%.3f-%.3f)  E-value point %.2f | CI %.2f\n",
+  cat(sprintf("%-28s HR %.4f (%.4f-%.4f)  E-value point %.2f | CI %.2f\n",
               lab, est, lo, hi, e["E-values","point"], ci))
 }
 cat("=== E-values (point estimate | CI limit nearest null) ===\n")
-show("Primary: cohesion->dep",        0.884, 0.859, 0.909)  # main cohort, Table 2 primary on the rebuilt cohort (sanity_checks.R section 5)
-show("Steps->incident depression",    0.753, 0.702, 0.807)  # device behaviour
-show("Wellbeing(happy)->depression",  0.611, 0.581, 0.642)  # self-report affect
-show("Cohesion->dep (SWB cohort)",    0.867, 0.817, 0.920)  # r2_reri_subsamples_vif.R (b), rebuilt cohort
+cox <- readRDS("cox_dat3.rds")
+m <- coxph(Surv(time_days,event) ~ z_cohesion + age + sex + race + ethnicity + income_f + educ_f + emp_f + log_util, cox)
+ci <- exp(confint(m)["z_cohesion",])
+show("Primary: cohesion->dep", exp(coef(m)[["z_cohesion"]]), ci[1], ci[2])

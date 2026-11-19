@@ -2,7 +2,7 @@
 # Recomputes primary + lag period under the PRIMARY (factor) specification so the numbers match
 # the headline exactly; antidepressant parallel outcome from its cohort; the reweighted row is READ from
 # rake_out.rds (written by rake_ipw.R, so no inferential estimate is hard-coded); the E-value printed
-# below is a sensitivity metric from evalue.R.
+# below is computed from the primary model.
 library(survival)
 cox <- readRDS("cox_dat3.rds")
 f <- Surv(time_days,event) ~ z_cohesion + age + sex + race + ethnicity + income_f + educ_f + emp_f + log_util
@@ -26,6 +26,8 @@ t2 <- rbind(
   line(mA, "Antidepressant initiation (parallel outcome)"))
 write.csv(t2, "table2.csv", row.names=FALSE)
 cat("=== TABLE 2 (primary + sensitivity analyses) ===\n"); print(t2, row.names=FALSE)
-cat("\nE-value (primary): 1.52 (lower 95% CI limit, 1.43)   [evalue.R, rebuilt-cohort inputs]\n")
+evf <- function(h){ r <- if (h < 1) 1/h else h; r + sqrt(r*(r-1)) }   # VanderWeele-Ding, rare outcome so HR ~ RR
+ciP <- exp(confint(mP)["z_cohesion",]); hP <- exp(coef(mP)[["z_cohesion"]])
+cat(sprintf("\nE-value (primary, computed from this model): %.2f (lower 95%% CI limit, %.2f) | HR %.4f (%.4f-%.4f)\n", evf(hP), evf(ciP[2]), hP, ciP[1], ciP[2]))
 cat("Footnote: HR per 1-SD cohesion. Reweighted row uses the parsimonious specification;",
     "\nprimary and lag period use the fully adjusted specification.\n")

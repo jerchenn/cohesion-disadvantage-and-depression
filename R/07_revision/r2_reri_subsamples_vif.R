@@ -18,7 +18,7 @@ reri <- function(m, a, b, ab, lab){
   AP <- R / h11; S <- (h11 - 1) / ((h10 - 1) + (h01 - 1))
   p_mult <- 2*pnorm(-abs(cf[[3]] / sqrt(V[3,3])))
   cat(sprintf("\n%s\n  HR exposed to A only %.2f, B only %.2f, both %.2f (reference: neither)\n", lab, h10, h01, h11))
-  cat(sprintf("  RERI %.3f (95%% CI %.3f to %.3f); AP %.3f; synergy index %.2f\n", R, R - 1.96*se, R + 1.96*se, AP, S))
+  cat(sprintf("  RERI %.4f (95%% CI %.4f to %.4f); AP %.4f; synergy index %.4f\n", R, R - 1.96*se, R + 1.96*se, AP, S))
   cat(sprintf("  multiplicative interaction HR %.3f, P=%.3f (Bonferroni for 2 tests: P=%.3f)\n", exp(cf[[3]]), p_mult, min(1, 2*p_mult)))
   cat(sprintf("  n=%s events=%s\n", mask(m$n), mask(m$nevent)))
 }

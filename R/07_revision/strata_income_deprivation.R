@@ -6,7 +6,7 @@ source("R/07_revision/_common.R", local = TRUE)
 prim <- "age + sex + race + ethnicity + income_f + educ_f + emp_f + log_util"
 fit_s <- function(s, lab){ m <- coxph(as.formula(sprintf("Surv(time_days,event) ~ z_cohesion + %s", prim)), s)
   ci <- exp(confint(m)["z_cohesion", ])
-  cat(sprintf("%-40s HR %.3f (%.3f-%.3f)  n=%s ev=%s\n", lab, exp(coef(m)[["z_cohesion"]]), ci[1], ci[2], mask(m$n), mask(m$nevent))) }
+  cat(sprintf("%-40s HR %.4f (%.4f-%.4f)  n=%s ev=%s\n", lab, exp(coef(m)[["z_cohesion"]]), ci[1], ci[2], mask(m$n), mask(m$nevent))) }
 d <- cox[!is.na(cox$z_cohesion), ]
 hdr("Income strata (income_n: 1-9 brackets; >=75k is brackets 6-9)")
 fit_s(d[!is.na(d$income_n) & d$income_n >= 6, ], "income >=$75k")
