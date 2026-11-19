@@ -70,9 +70,7 @@ p <- ggplot(out, aes(years, cuminc, colour=cohesion, fill=cohesion, linetype=coh
   scale_fill_manual(values=pal, name=NULL, guide="none") +
   scale_linetype_manual(values=c("Low cohesion"="solid","High cohesion"="dotted"), name=NULL) +
   scale_y_continuous(labels=function(x) paste0(round(100*x), "%")) +
-  labs(x="Years since baseline", y="Cumulative incidence of depression",
-       title="Cohesion separates depression risk within every disadvantage stratum",
-       subtitle="Low vs high neighborhood cohesion, by area-deprivation tertile (adjusted)") +
+  labs(x="Years since baseline", y="Cumulative incidence of depression") +   # no title in the image: JAMA titles go in the legend and must not state results
   theme_bw(base_size=11) +
   theme(legend.position="top", panel.grid.minor=element_blank(),
         strip.text=element_text(face="bold"), plot.title.position="plot",
