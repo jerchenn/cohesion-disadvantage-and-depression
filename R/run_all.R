@@ -50,6 +50,7 @@ steps <- c(
   "R/02_models/env_wb_linkage.R",
   "R/03_robustness/mediation.R",
   ## 5. analyses added at revision (eTables 1, 5-9, 11, 12; Table 2 rows)
+  "R/07_revision/r3_entry_exclusions.R",   # participants excluded for having no EHR record after baseline (eTable 5, panel C)
   "R/07_revision/r1_responders.R",
   "R/07_revision/r1_exclusions_lags_ehrlength.R",
   "R/07_revision/r2_ascertainment.R",
