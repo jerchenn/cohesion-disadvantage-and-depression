@@ -11,7 +11,13 @@ for (v in intersect(names(A), names(B))) {
   a <- A[[v]]; b <- B[[v]]
   if (is.numeric(a) && is.numeric(b)) d <- !((is.na(a) & is.na(b)) | (!is.na(a) & !is.na(b) & abs(a - b) < 1e-9))
   else d <- !((is.na(a) & is.na(b)) | (!is.na(a) & !is.na(b) & as.character(a) == as.character(b)))
-  if (sum(d)) cat(sprintf("%-22s differs for %s participants\n", v, mask(sum(d))))
+  n <- sum(d, na.rm = TRUE)
+  if (n > 0) {
+    cat(sprintf("%-22s differs for %s participants", v, mask(n)))
+    if (is.numeric(a) && is.numeric(b)) { ok <- !is.na(a) & !is.na(b)
+      cat(sprintf(" | correlation %.4f, mean abs difference %.4f, missing in cached %s vs fresh %s", cor(a[ok], b[ok]), mean(abs(a[ok] - b[ok])), mask(sum(is.na(a))), mask(sum(is.na(b))))) }
+    else { tb <- table(cached = addNA(factor(a))[d], fresh = addNA(factor(b))[d]); tb[tb > 0 & tb < 20] <- NA; cat("\n"); print(tb) }
+    cat("\n") }
 }
 cat("variables not listed are identical in both files\n")
-for (f in c("R/01_build/build_cox3.R")) cat("\nlast commit touching", f, ":\n"); system("cd ~/cohesion-disadvantage-and-depression && git log -3 --format='%h %ad %s' --date=short -- R/01_build/build_cox3.R")
+cat("\nlast commits touching build_cox3.R:\n"); system("cd ~/cohesion-disadvantage-and-depression && git log -3 --format='%h %ad %s' --date=short -- R/01_build/build_cox3.R")
