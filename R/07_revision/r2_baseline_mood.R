@@ -51,13 +51,16 @@ for (k in 0:4) cat(sprintf("    emotional problems = %d: %s\n", k, mask(sum(d$em
 cat(sprintf("  correlation of the two items in the cohort: r = %.2f; correlation with z_cohesion: mental health %.2f, emotional problems %.2f\n",
             cor(d$sr_mental, d$emo_prob, use = "complete.obs"), cor(d$sr_mental, d$z_cohesion, use = "complete.obs"), cor(d$emo_prob, d$z_cohesion, use = "complete.obs")))
 
+WITH_PRIOR <- Sys.getenv("MOOD_PRIOR") == "1"   # the anxiety and drug pulls are the heavy step; the reviewer's request is answered without them
 hdr("(d) Prior anxiety diagnosis and psychotropic prescription (as in baseline_history.R), for the combined model")
+if (WITH_PRIOR) {
 anx <- first_date("Anxiety disorder"); d$prior_anx <- as.integer(pre_baseline(anx, d) & anx$first_dt[match(d$person_id, anx$person_id)] < d$expo_date)
 med <- run_sql(sprintf("WITH atc AS (SELECT concept_id FROM `%s.concept` WHERE vocabulary_id='ATC' AND concept_code IN ('N05A','N05B','N06A')), ids AS (SELECT DISTINCT ca.descendant_concept_id AS concept_id FROM `%s.concept_ancestor` ca JOIN atc a ON ca.ancestor_concept_id=a.concept_id) SELECT de.person_id, MIN(DATE(de.drug_exposure_start_date)) AS first_dt FROM `%s.drug_exposure` de JOIN ids i ON de.drug_concept_id=i.concept_id GROUP BY de.person_id", cdr, cdr, cdr))
 med$person_id <- as.character(med$person_id); med$first_dt <- as.Date(med$first_dt)
 d$prior_med <- as.integer(!is.na(match(d$person_id, med$person_id)) & med$first_dt[match(d$person_id, med$person_id)] < d$expo_date); d$prior_med[is.na(d$prior_med)] <- 0L
 d$prior_anx[is.na(d$prior_anx)] <- 0L
 cat(sprintf("  prior anxiety: %s (%.1f%%); prior psychotropic: %s (%.1f%%)\n", mask(sum(d$prior_anx)), 100*mean(d$prior_anx), mask(sum(d$prior_med)), 100*mean(d$prior_med)))
+} else { d$prior_anx <- 0L; d$prior_med <- 0L; cat("  skipped (set MOOD_PRIOR=1 to include the EHR markers)\n") }
 
 hdr("(e) Primary model with baseline mood items")
 hr(fit(RHS, d), lab = "primary, full cohort (Table 2)")
@@ -68,8 +71,8 @@ hr(fit(paste(RHS, "+ sr_mental_f"), db),              lab = "  + self-rated ment
 hr(fit(paste(RHS, "+ emo_prob_f"), db),               lab = "  + emotional problems 7 days (categorical, ref never)")
 m_both <- fit(paste(RHS, "+ sr_mental_f + emo_prob_f"), db); hr(m_both, lab = "  + both items (categorical)")
 hr(fit(paste(RHS, "+ sr_mental + emo_prob"), db),     lab = "  + both items (linear)")
-m_all <- fit(paste(RHS, "+ sr_mental_f + emo_prob_f + prior_anx + prior_med"), db); hr(m_all, lab = "  + both items + prior anxiety + prior psychotropic")
-hr(fit(paste(RHS, "+ sr_mental_f + emo_prob_f + prior_anx + prior_med"), db[db$sr_mental_dt < db$expo_date, ]), lab = "  same, items answered strictly before baseline only")
+if (WITH_PRIOR) { m_all <- fit(paste(RHS, "+ sr_mental_f + emo_prob_f + prior_anx + prior_med"), db); hr(m_all, lab = "  + both items + prior anxiety + prior psychotropic") } else m_all <- m_both
+hr(fit(paste(RHS, "+ sr_mental_f + emo_prob_f"), db[db$sr_mental_dt < db$expo_date, ]), lab = "  both items, answered strictly before baseline only")
 cat("\n  Item HRs in the model with both items (validity: worse mood should predict depression):\n")
 cf <- summary(m_both)$coefficients; for (r in grep("sr_mental_f|emo_prob_f", rownames(cf), value = TRUE)) cat(sprintf("    %-16s HR %.2f (%.2f-%.2f)\n", r, cf[r, "exp(coef)"], exp(cf[r, "coef"] - 1.96*cf[r, "se(coef)"]), exp(cf[r, "coef"] + 1.96*cf[r, "se(coef)"])))
 
@@ -84,5 +87,5 @@ hr(fit(paste("z_cohesion * income_z + sr_mental_f + emo_prob_f +", sub("income_f
 
 hdr("Sentence for the letter and the Limitations (fill from above)")
 b <- coef(m_all)[["z_cohesion"]]; se <- sqrt(vcov(m_all)["z_cohesion", "z_cohesion"])
-cat(sprintf("The Overall Health survey, completed at enrolment, includes the PROMIS items on self-rated mental health and on how often the participant was bothered by emotional problems such as feeling anxious, depressed, or irritable. Among %s participants with both items recorded on or before the cohesion survey (median %.1f years earlier), adjusting for them together with prior anxiety and psychotropic prescription gave a hazard ratio of %.2f (95%% CI, %.2f-%.2f).\n",
-            mask(m_all$n), median(gap, na.rm = TRUE), exp(b), exp(b - 1.96*se), exp(b + 1.96*se)))
+cat(sprintf("The Overall Health survey, completed at enrolment, includes the PROMIS items on self-rated mental health and on how often the participant was bothered by emotional problems such as feeling anxious, depressed, or irritable. Among %s participants with both items recorded on or before the cohesion survey (median %.1f years earlier), adjusting for them%s gave a hazard ratio of %.2f (95%% CI, %.2f-%.2f).\n",
+            mask(m_all$n), median(gap, na.rm = TRUE), if (WITH_PRIOR) " together with prior anxiety and psychotropic prescription" else "", exp(b), exp(b - 1.96*se), exp(b + 1.96*se)))
