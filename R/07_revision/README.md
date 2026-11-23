@@ -12,6 +12,7 @@ run("R/07_revision/r2_mi_primary.R")               # no BigQuery; 6 x 20 imputat
 run("R/07_revision/r1_exclusions_lags_ehrlength.R") # BigQuery: psychiatric concept sets
 run("R/07_revision/r2_ascertainment.R")            # BigQuery: contact counts, visits, negative controls
 run("R/07_revision/r1_responders.R")               # BigQuery: all EHR-linked participants (large pull, stays in memory)
+run("R/07_revision/r2_baseline_mood.R")            # BigQuery: Overall Health PROMIS mental items answered on/before baseline (added 23 Nov)
 ```
 
 | Script | Letter item | What it prints |
@@ -22,6 +23,7 @@ run("R/07_revision/r1_responders.R")               # BigQuery: all EHR-linked pa
 | r2_ascertainment.R | R2 informative contact; primary-care visits; negative controls | post-baseline contact by cohesion, income, deprivation; outpatient visits as covariate; cataract, hernia, fracture as negative controls |
 | r2_ipcw.R | R2 informative censoring | censoring model; stabilised IPCW; weighted primary |
 | r2_mi_primary.R | R2 MI as primary, auxiliaries, MNAR | MI (m = 20) with the imputation model stated; delta-adjusted MNAR scenarios |
+| r2_baseline_mood.R | R2 markers of baseline mood (replaces the letter's claim that none exist) | Overall Health labels in the CDR; answer scales; self-rated mental health and emotional-problems items on/before baseline, coverage and interval; primary with the items, with prior anxiety and psychotropic, strictly-before subset; interaction check; sentence for the letter |
 | r2_reri_subsamples_vif.R | R2 additive interaction and multiplicity; subsample replication; item collinearity | RERI, AP, synergy index; Bonferroni; cohesion HR within SWB and Fitbit subcohorts; VIF and condition number |
 
 Text-only items from the letter (no script): entry-criterion justification, deprivation index description, ZIP3 coarseness in abstract and conclusions, "clinically ascertained" wording, causal language and "predict", race and ethnicity and gender reporting, Key Points and Conclusions phrasing, Table 1 male row, forest plots on log scale, code list in the supplement (from the concept-set definition).
