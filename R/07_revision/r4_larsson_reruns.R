@@ -6,8 +6,11 @@
 #  6. area-mean cohesion per SD and per IQR of the area means
 # Primary specification unchanged. Aggregate output only; counts below 20 masked. Needs: survival, bigrquery.
 source("R/07_revision/_common.R", local = TRUE); bq()
+## Only item 3 answers a reviewer request (R2.3: detection by income and area under censoring weights). Items 2, 4, 5 and 6 run only with LARSSON_ALL=1.
+ALL <- Sys.getenv("LARSSON_ALL") == "1"
 
 ## ============================================================ 2. response weights with education and income
+if (ALL) {
 hdr("2. Survey-response weights: response model with education and income from The Basics")
 pop <- run_sql(sprintf("
 WITH ehr AS (SELECT person_id, MIN(condition_start_date) AS first_ehr, MAX(condition_start_date) AS last_ehr, COUNT(*) AS n_cond FROM `%s.condition_occurrence` GROUP BY person_id),
@@ -42,7 +45,7 @@ fit_w <- function(form, lab){
 hr(fit(RHS, cox), lab = "primary, unweighted")
 fit_w(responder ~ age_band + gender_c + race_eth + ehr_years + log_ncond, "age, gender, race/ethnicity, EHR depth (as submitted)")
 fit_w(responder ~ age_band + gender_c + race_eth + ehr_years + log_ncond + income_c + educ_c, "plus Basics income and education (Larsson item 2)")
-
+}
 ## ============================================================ 3. censoring weights with deprivation and income; interactions refitted
 hdr("3. IPCW with area deprivation and income in the censoring model; interaction models with the weights")
 d <- cox[!is.na(cox$z_cohesion) & !is.na(cox$deprivation_index), ]
@@ -65,8 +68,8 @@ hr(coxph(as.formula(paste("Surv(time_days, event) ~", RHS)), d, weights = w1, ro
 fdep <- as.formula(paste("Surv(time_days, event) ~ z_cohesion * dep_z +", RHS_NOCOH)); finc <- as.formula(paste("Surv(time_days, event) ~ z_cohesion * income_z + income_miss +", sub("income_f \\+ ", "", RHS_NOCOH)))
 hr(coxph(fdep, d), "z_cohesion:dep_z", "cohesion x deprivation, unweighted"); hr(coxph(fdep, d, weights = w1, robust = TRUE), "z_cohesion:dep_z", "cohesion x deprivation, IPCW-weighted (robust SE)")
 hr(coxph(finc, d), "z_cohesion:income_z", "cohesion x income, unweighted"); hr(coxph(finc, d, weights = w1, robust = TRUE), "z_cohesion:income_z", "cohesion x income, IPCW-weighted (robust SE)")
-
 ## ============================================================ 4. affect subcohort with delayed entry
+if (ALL) {
 hdr("4. Subcohorts: affect subcohort with delayed entry at the wellbeing-survey date; wearable subcohort as before")
 wb <- readRDS("wb_item_dat.rds"); wb$person_id <- as.character(wb$person_id)
 wbd <- run_sql(sprintf("SELECT person_id, MIN(DATE(survey_datetime)) AS wb_date FROM `%s.ds_survey` WHERE question_concept_id = 1703980 GROUP BY person_id", cdr))
@@ -81,8 +84,9 @@ m_de <- coxph(as.formula(paste("Surv(entry, time_days, event) ~", RHS)), s2); hr
 cat(sprintf("  events after entry: %s; person-years after entry: %.0f\n", mask(sum(s2$event)), sum(s2$time_days - s2$entry) / 365.25))
 fb <- readRDS("fitbit_dat.rds"); fb_ids <- as.character(fb$person_id[!is.na(fb$steps) & !is.na(fb$event)])
 hr(fit(RHS, cox[cox$person_id %in% fb_ids, ]), lab = "wearable subcohort (time from cohesion baseline)")
-
+}
 ## ============================================================ 5. outcome codes
+if (ALL) {
 hdr("5. Outcome codes: first qualifying concept per event; remission and recurrent codes; PMDD and schizoaffective")
 dep_ids <- sprintf("SELECT a.descendant_concept_id FROM `%s.concept` p JOIN `%s.concept_ancestor` a ON a.ancestor_concept_id=p.concept_id JOIN `%s.concept` c ON c.concept_id=a.descendant_concept_id WHERE p.vocabulary_id='SNOMED' AND p.standard_concept='S' AND p.concept_name IN ('Depressive disorder','Major depressive disorder','Recurrent depressive disorder','Dysthymia') AND c.standard_concept='S' AND c.domain_id='Condition' AND LOWER(c.concept_name) NOT LIKE '%%bipolar%%'", cdr, cdr, cdr)
 fc <- run_sql(sprintf("WITH f AS (SELECT person_id, MIN(condition_start_date) AS d FROM `%s.condition_occurrence` WHERE condition_concept_id IN (%s) GROUP BY person_id)
@@ -103,8 +107,9 @@ hr(fit(RHS, d), lab = "primary (Table 2)")
 recode(ev$person_id[rem | rec], "excluding first codes of remission or recurrent depression"); recode(ev$person_id[rem | rec], "excluding first codes of remission or recurrent depression", censor = FALSE)
 recode(ev$person_id[pmdd | sza], "dropping PMDD and schizoaffective first codes")
 recode(ev$person_id[rem | rec | pmdd | sza], "all of the above")
-
+}
 ## ============================================================ 6. area-mean cohesion per SD and per IQR of the area means
+if (ALL) {
 hdr("6. Area-mean (contextual) cohesion rescaled per SD and per IQR of the area means")
 d <- cox[!is.na(cox$zip3_as_string) & !is.na(cox$z_cohesion), ]; d$clus <- factor(d$zip3_as_string)
 S <- tapply(d$z_cohesion, d$clus, sum); N <- tapply(d$z_cohesion, d$clus, length)
@@ -118,3 +123,4 @@ mb_sd <- fit(paste(RHS, '+ area_sd + frailty(clus, distribution = "gaussian")'),
 hr(mb_sd, "z_cohesion", "  individual cohesion in the same model")
 mb_iqr <- fit(paste(RHS, '+ area_iqr + frailty(clus, distribution = "gaussian")'), dd); hr(mb_iqr, "area_iqr", "area mean per IQR of the area means")
 cat("\nSentence for the Results: replace '(HR, 0.77; 95% CI, 0.64-0.93)' with the per-SD estimate above, stated as 'per SD of the area means'.\n")
+}
