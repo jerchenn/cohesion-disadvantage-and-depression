@@ -22,7 +22,7 @@ hdr("(b) Raw answer distributions (lock the scales before trusting the mapping)"
 sv <- run_sql(sprintf("SELECT person_id, question, LOWER(answer) AS ans, DATE(survey_datetime) AS dt FROM `%s.ds_survey` WHERE question IN ('%s','%s')", cdr, q_mh, q_em))
 sv$person_id <- as.character(sv$person_id); sv$dt <- as.Date(sv$dt)
 for (qq in c(q_mh, q_em)) { cat("\n--", qq, "--\n"); tb <- sort(table(sv$ans[sv$question == qq]), decreasing = TRUE); for (k in names(tb)) cat(sprintf("  %-45s %s\n", k, mask(tb[[k]]))) }
-map_mh <- function(a) ifelse(grepl("excellent", a), 5L, ifelse(grepl("very good", a), 4L, ifelse(grepl("\\bgood\\b", a), 3L, ifelse(grepl("fair", a), 2L, ifelse(grepl("poor", a), 1L, NA_integer_)))))   # higher = better
+map_mh <- function(a) ifelse(grepl("excellent|excllent", a), 5L, ifelse(grepl("very good", a), 4L, ifelse(grepl("\\bgood\\b", a), 3L, ifelse(grepl("fair", a), 2L, ifelse(grepl("poor", a), 1L, NA_integer_)))))   # higher = better
 map_em <- function(a) ifelse(grepl("never", a), 0L, ifelse(grepl("rarely", a), 1L, ifelse(grepl("sometimes", a), 2L, ifelse(grepl("often", a), 3L, ifelse(grepl("always", a), 4L, NA_integer_)))))   # higher = more bothered
 sv$v <- ifelse(sv$question == q_mh, map_mh(sv$ans), map_em(sv$ans))
 cat(sprintf("\nunmapped answers (skip, prefer not to answer, other): mental health %s of %s rows; emotional problems %s of %s rows\n",
