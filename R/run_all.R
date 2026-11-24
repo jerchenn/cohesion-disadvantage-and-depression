@@ -61,6 +61,8 @@ steps <- c(
   "R/07_revision/strata_income_deprivation.R",
   "R/07_revision/r3_raking_subset.R",
   "R/07_revision/r3_final_checks.R",
+  "R/07_revision/r2_baseline_mood.R",       # enrolment mood items as a bound (Reviewer 2, second point)
+  "R/07_revision/r5_movers.R",              # recent movers vs long-term residents, cited in the letter
   ## 6. tables and figures
   "R/04_outputs/table1.R",
   "R/04_outputs/table2.R",
